@@ -12,13 +12,12 @@
   <div class="court-emblem">⚖️</div>
   <div class="court-title">디스코드 모의법원</div>
   <div class="court-subtitle">DISCORD MOCK COURT OF JUSTICE</div>
-  <div class="header-divider">
-    <span></span><i>✦</i><span></span>
-  </div>
+  <div class="header-divider"><span></span><i>✦</i><span></span></div>
 </header>
 
 <nav class="court-nav">
   <a href="index.html">🏛️ 사건 목록</a>
+  <a href="verdicts.html">📜 판결 아카이브</a>
   <a href="#" class="active">⚖️ 재판 진행</a>
 </nav>
 
@@ -27,28 +26,35 @@
     <div class="empty-icon">⏳</div>
     <p>사건 정보를 불러오는 중...</p>
   </div>
+
   <div id="trialContent" style="display:none">
 
     <!-- 판결 배너 (종결 시) -->
     <div id="verdictBanner" style="display:none" class="verdict-banner">
       <div id="verdictStamp" class="verdict-stamp"></div>
-      <div class="verdict-label">🔨 최종 판결</div>
+      <div class="verdict-label">🔨 주 문 (主文)</div>
+      <div id="verdictJoomun" class="verdict-joomun"></div>
       <div id="verdictResult" class="verdict-result"></div>
-      <div id="verdictReason" class="verdict-reason"></div>
+      <div id="verdictPunishment" class="verdict-punishment" style="display:none"></div>
+      <div class="verdict-reason-box">
+        <div class="verdict-reason-label">이 유 (理由)</div>
+        <div id="verdictReasonText"></div>
+      </div>
     </div>
 
     <!-- 사건 정보 -->
-    <div class="trial-info-card">
+    <div id="trialInfoCard" class="trial-info-card">
+      <div id="caseTypeLabel" class="case-type-label"></div>
       <div class="trial-case-number" id="caseNumber"></div>
       <div class="trial-case-title" id="caseTitle"></div>
       <div class="trial-parties">
         <div class="party-box">
-          <div class="party-label">원고</div>
+          <div class="party-label" id="plaintiffLabel"></div>
           <div class="party-name" id="plaintiff"></div>
         </div>
         <div class="vs-badge">VS</div>
         <div class="party-box">
-          <div class="party-label">피고</div>
+          <div class="party-label" id="defendantLabel"></div>
           <div class="party-name" id="defendant"></div>
         </div>
       </div>
@@ -60,18 +66,12 @@
       <!-- 왼쪽: 발언 기록 -->
       <div>
         <div class="court-record">
-          <div class="record-header">
+          <div class="record-header" id="recordHeader">
             📜 법정 발언 기록
             <span id="stmtCount" style="margin-left:auto;font-size:11px;opacity:0.7;font-weight:400;letter-spacing:0;"></span>
           </div>
-          <div id="statementsList" class="statements-list">
-            <div class="empty-state" style="padding:32px 20px;">
-              <div class="empty-icon" style="font-size:32px;">💬</div>
-              <p style="font-size:13px;">아직 발언이 없습니다</p>
-            </div>
-          </div>
+          <div id="statementsList" class="statements-list"></div>
 
-          <!-- 발언 입력 -->
           <div class="statement-form" id="statementFormArea">
             <div class="statement-form-inner">
               <div class="form-group" style="margin-bottom:0">
@@ -80,17 +80,11 @@
               </div>
               <div class="form-group" style="margin-bottom:0">
                 <label style="font-size:12px;">역할</label>
-                <select id="stmtRole" style="padding:8px 10px;font-size:13px;">
-                  <option value="judge">⚖️ 판사</option>
-                  <option value="prosecutor">⚡ 검사</option>
-                  <option value="defender">🛡️ 변호인</option>
-                  <option value="witness">👁️ 증인</option>
-                  <option value="juror">👥 배심원</option>
-                </select>
+                <select id="stmtRole" style="padding:8px 10px;font-size:13px;"></select>
               </div>
             </div>
-            <div class="form-group" style="margin-bottom:10px;">
-              <textarea id="stmtContent" placeholder="발언 내용을 입력하세요... (Enter로 전송 / Shift+Enter로 줄바꿈)" style="padding:8px 10px;font-size:13px;min-height:70px;width:100%;"></textarea>
+            <div class="form-group" style="margin-bottom:10px;margin-top:10px;">
+              <textarea id="stmtContent" placeholder="발언 내용 입력... (Enter 전송 / Shift+Enter 줄바꿈)" style="padding:8px 10px;font-size:13px;min-height:70px;width:100%;"></textarea>
             </div>
             <div style="display:flex;gap:8px;justify-content:flex-end;align-items:center;">
               <span style="font-size:11px;color:#aaa;">Enter 전송 · Shift+Enter 줄바꿈</span>
@@ -101,44 +95,44 @@
 
         <!-- 판사 판결 패널 -->
         <div id="judgePanelWrap" class="judge-panel mt-16" style="display:none">
-          <div class="judge-panel-header">
-            🔨 판사 — 최종 판결 선고
-          </div>
+          <div class="judge-panel-header" id="judgePanelHeader">🔨 판사 — 최종 판결 선고</div>
           <div class="judge-panel-body">
+
             <div class="form-group">
-              <label>판결</label>
-              <select id="verdictSelect" style="padding:8px 10px;font-size:14px;width:100%;">
-                <option value="유죄">⚡ 유죄</option>
-                <option value="무죄">🛡️ 무죄</option>
-                <option value="부분유죄">⚖️ 부분유죄</option>
-              </select>
+              <label>판결 주문</label>
+              <select id="verdictSelect" style="padding:8px 10px;font-size:14px;width:100%;" onchange="onVerdictChange()"></select>
             </div>
+
+            <!-- 형량 입력 (형사 유죄 시) -->
+            <div id="punishmentGroup" class="form-group" style="display:none">
+              <label id="punishmentLabel">형량</label>
+              <input type="text" id="punishmentInput" placeholder="예: 징역 1년, 벌금 100만원, 집행유예 2년">
+            </div>
+
             <div class="form-group">
               <label>판결 이유</label>
-              <textarea id="verdictReason" placeholder="판결 이유를 작성해주세요..." style="min-height:80px;width:100%;padding:8px 10px;font-size:13px;border:1.5px solid #ede6d6;border-radius:4px;font-family:inherit;"></textarea>
+              <textarea id="verdictReasonInput" placeholder="판결 이유를 작성해주세요..." style="min-height:80px;width:100%;padding:8px 10px;font-size:13px;border:1.5px solid #ede6d6;border-radius:4px;font-family:inherit;"></textarea>
             </div>
             <button class="btn btn-gold w-full" onclick="submitVerdict()" style="width:100%;justify-content:center;">🔨 판결 선고</button>
           </div>
         </div>
       </div>
 
-      <!-- 오른쪽: 사이드바 -->
+      <!-- 오른쪽 사이드바 -->
       <div>
 
         <!-- 배심원 투표 -->
         <div class="sidebar-card">
-          <div class="sidebar-card-header">
-            🗳️ 배심원 투표
-          </div>
+          <div class="sidebar-card-header">🗳️ 배심원 평결 투표</div>
           <div class="sidebar-card-body">
             <div class="vote-counts">
               <div class="vote-count-box guilty">
-                <div class="vote-count-label">유죄</div>
-                <div class="vote-count-num" id="guiltyCount">0</div>
+                <div class="vote-count-label" id="guiltyLabel">유죄</div>
+                <div class="vote-count-num guilty" id="guiltyCount">0</div>
               </div>
               <div class="vote-count-box notguilty">
-                <div class="vote-count-label">무죄</div>
-                <div class="vote-count-num" id="notGuiltyCount">0</div>
+                <div class="vote-count-label" id="notGuiltyLabel">무죄</div>
+                <div class="vote-count-num notguilty" id="notGuiltyCount">0</div>
               </div>
             </div>
             <div class="vote-bar-wrap">
@@ -150,44 +144,39 @@
             <div id="voteFormArea">
               <div class="vote-form">
                 <input type="text" id="voterName" class="vote-name-input" placeholder="닉네임 입력">
-                <div class="vote-buttons">
-                  <button class="btn btn-danger btn-sm" style="justify-content:center;" onclick="submitVote('유죄')">⚡ 유죄</button>
-                  <button class="btn btn-success btn-sm" style="justify-content:center;" onclick="submitVote('무죄')">🛡️ 무죄</button>
-                </div>
+                <div class="vote-buttons" id="voteButtons"></div>
               </div>
               <div id="voterList" style="margin-top:12px;"></div>
             </div>
           </div>
         </div>
 
-        <!-- 증거 제출 -->
+        <!-- 증거 -->
         <div class="sidebar-card">
-          <div class="sidebar-card-header">
-            🗂️ 증거 목록
-          </div>
+          <div class="sidebar-card-header">🗂️ 증거 목록</div>
           <div class="sidebar-card-body">
             <div id="evidenceList" class="evidence-list">
               <div style="text-align:center;color:#bbb;font-size:13px;padding:12px 0;">제출된 증거 없음</div>
             </div>
-            <div id="evidenceFormArea" style="margin-top:14px;border-top:1px solid #ede6d6;padding-top:14px;">
+            <div id="evidenceFormArea" style="margin-top:14px;border-top:1px solid var(--ivory-dark);padding-top:14px;">
               <div class="form-group">
                 <label style="font-size:12px;">제출자 닉네임</label>
                 <input type="text" id="evidenceSubmitter" placeholder="닉네임" style="padding:7px 10px;font-size:13px;width:100%;">
               </div>
               <div class="form-group">
                 <label style="font-size:12px;">증거 제목</label>
-                <input type="text" id="evidenceTitle" placeholder="예: 스크린샷 001" style="padding:7px 10px;font-size:13px;width:100%;">
+                <input type="text" id="evidenceTitle" placeholder="예: 스크린샷 001, 카카오톡 대화" style="padding:7px 10px;font-size:13px;width:100%;">
               </div>
               <div class="form-group" style="margin-bottom:10px;">
                 <label style="font-size:12px;">증거 내용</label>
                 <textarea id="evidenceContent" placeholder="증거 내용 또는 설명..." style="padding:7px 10px;font-size:13px;min-height:60px;width:100%;border:1.5px solid #ede6d6;border-radius:4px;font-family:inherit;resize:vertical;"></textarea>
               </div>
-              <button class="btn btn-primary btn-sm w-full" style="width:100%;justify-content:center;" onclick="submitEvidence()">📎 증거 제출</button>
+              <button class="btn btn-primary btn-sm" style="width:100%;justify-content:center;" onclick="submitEvidence()">📎 증거 제출</button>
             </div>
           </div>
         </div>
 
-        <!-- 재판 링크 공유 -->
+        <!-- 링크 공유 -->
         <div class="sidebar-card">
           <div class="sidebar-card-header">🔗 링크 공유</div>
           <div class="sidebar-card-body">
@@ -213,10 +202,63 @@ const params = new URLSearchParams(location.search);
 const CASE_ID = params.get('id');
 let caseData = null;
 
-if (!CASE_ID) { location.href = 'index.html'; }
-
+if (!CASE_ID) location.href = 'index.html';
 document.getElementById('shareUrl').value = location.href;
 
+// ── 역할 설정 ────────────────────────────────────────────────
+const ROLES = {
+  형사: [
+    { value: 'judge',      label: '⚖️ 판사' },
+    { value: 'prosecutor', label: '⚡ 검사' },
+    { value: 'plaintiff',  label: '🙋 고소인 / 피해자' },
+    { value: 'defender',   label: '🛡️ 변호인' },
+    { value: 'defendant',  label: '🧑 피고인' },
+    { value: 'witness',    label: '👁️ 증인' },
+    { value: 'juror',      label: '👥 배심원' },
+  ],
+  민사: [
+    { value: 'judge',      label: '⚖️ 판사' },
+    { value: 'plaintiff',  label: '📜 원고' },
+    { value: 'defender',   label: '🛡️ 원고측 변호인' },
+    { value: 'defendant',  label: '🧑 피고' },
+    { value: 'witness',    label: '👁️ 증인' },
+    { value: 'juror',      label: '👥 배심원' },
+  ],
+};
+
+const ROLE_LABELS = {
+  형사: { judge: '판사', prosecutor: '검사', plaintiff: '고소인', defender: '변호인', defendant: '피고인', witness: '증인', juror: '배심원' },
+  민사: { judge: '판사', prosecutor: '검사', plaintiff: '원고',   defender: '변호인', defendant: '피고',   witness: '증인', juror: '배심원' },
+};
+
+// ── 판결 설정 ────────────────────────────────────────────────
+const VERDICTS = {
+  형사: [
+    { value: '유죄',    label: '⚡ 유죄',    cls: 'guilty',    joomun: '피고인을 다음과 같이 처한다.', punishment: true },
+    { value: '무죄',    label: '🛡️ 무죄',    cls: 'notguilty', joomun: '피고인은 무죄.' },
+    { value: '공소기각', label: '📋 공소기각', cls: 'dismissed', joomun: '이 사건 공소를 기각한다.' },
+    { value: '면소',    label: '✋ 면소',    cls: 'dismissed', joomun: '이 사건 공소에 대하여 면소를 선고한다.' },
+    // 친고죄·반의사불벌죄에 한해 고소취하 또는 처벌불원으로 공소기각 가능
+    { value: '고소취하(공소기각)', label: '🤝 고소취하 (공소기각)', cls: 'dismissed', joomun: '피해자의 고소취하로 이 사건 공소를 기각한다.' },
+  ],
+  민사: [
+    { value: '청구인용',  label: '✅ 청구인용 (원고 승소)', cls: 'civil-win',   joomun: '원고의 청구를 인용한다.', punishment: true, punishmentLabel: '이행 내용', punishmentPlaceholder: '예: 피고는 원고에게 100만원을 지급하라' },
+    { value: '일부인용',  label: '⚖️ 일부인용',          cls: 'civil-win',   joomun: '원고의 청구를 일부 인용한다.', punishment: true, punishmentLabel: '인용 내용', punishmentPlaceholder: '예: 피고는 원고에게 50만원을 지급하라' },
+    { value: '청구기각',  label: '❌ 청구기각 (피고 승소)', cls: 'civil-loss',  joomun: '원고의 청구를 기각한다.' },
+    { value: '조정성립',  label: '🤝 조정성립',           cls: 'settlement',  joomun: '당사자 간 조정이 성립되었다.', punishment: true, punishmentLabel: '조정 내용', punishmentPlaceholder: '예: 피고는 원고에게 30만원을 지급하고 서로 사과한다' },
+    { value: '소취하',   label: '📋 소취하',             cls: 'dismissed',   joomun: '원고가 소를 취하하였다.' },
+  ],
+};
+
+// ── 사건 번호 생성 ───────────────────────────────────────────
+function caseNumber(c) {
+  const year = new Date(c.created_at).getFullYear();
+  const seq = c.id.slice(0, 4).toUpperCase();
+  const type = (c.case_type || '형사') === '형사' ? '형단' : '민단';
+  return `${year} 디코${type} 제${seq}호`;
+}
+
+// ── 케이스 로드 ──────────────────────────────────────────────
 async function loadCase() {
   const res = await fetch(`/api/cases/${CASE_ID}`);
   if (!res.ok) { toast('사건을 찾을 수 없습니다.', 'error'); return; }
@@ -227,12 +269,55 @@ async function loadCase() {
 }
 
 function renderCase(c) {
+  const type = c.case_type || '형사';
+  const isCriminal = type === '형사';
+
   document.title = `${c.title} — 디스코드 모의법원`;
-  document.getElementById('caseNumber').textContent = `사건번호 ${c.id.slice(0,8).toUpperCase()}호`;
+
+  // 사건 정보 카드
+  const infoCard = document.getElementById('trialInfoCard');
+  infoCard.className = `trial-info-card ${isCriminal ? 'criminal' : 'civil'}`;
+  document.getElementById('caseTypeLabel').className = `case-type-label ${isCriminal ? 'criminal' : 'civil'}`;
+  document.getElementById('caseTypeLabel').textContent = isCriminal ? '⚡ 형사 사건' : '📜 민사 사건';
+  document.getElementById('caseNumber').textContent = caseNumber(c);
   document.getElementById('caseTitle').textContent = c.title;
+  document.getElementById('plaintiffLabel').textContent = isCriminal ? '고소인 / 검사' : '원고';
+  document.getElementById('defendantLabel').textContent = isCriminal ? '피고인' : '피고';
   document.getElementById('plaintiff').textContent = c.plaintiff;
   document.getElementById('defendant').textContent = c.defendant;
   document.getElementById('caseDesc').textContent = c.description;
+
+  // 발언 기록 헤더
+  document.getElementById('recordHeader').className = `record-header ${isCriminal ? 'criminal' : 'civil'}`;
+
+  // 역할 셀렉트
+  const roleSelect = document.getElementById('stmtRole');
+  roleSelect.innerHTML = ROLES[type].map(r => `<option value="${r.value}">${r.label}</option>`).join('');
+
+  // 판결 셀렉트
+  const verdictSelect = document.getElementById('verdictSelect');
+  verdictSelect.innerHTML = VERDICTS[type].map(v => `<option value="${v.value}">${v.label}</option>`).join('');
+  onVerdictChange();
+
+  // 판사 패널 색상
+  const judgePanel = document.getElementById('judgePanelWrap');
+  judgePanel.className = `judge-panel mt-16 ${isCriminal ? 'criminal' : 'civil'}`;
+  document.getElementById('judgePanelHeader').className = `judge-panel-header ${isCriminal ? 'criminal' : 'civil'}`;
+
+  // 배심원 투표 레이블 & 버튼
+  if (isCriminal) {
+    document.getElementById('guiltyLabel').textContent = '유죄';
+    document.getElementById('notGuiltyLabel').textContent = '무죄';
+    document.getElementById('voteButtons').innerHTML = `
+      <button class="btn btn-danger btn-sm" style="justify-content:center;" onclick="submitVote('유죄')">⚡ 유죄</button>
+      <button class="btn btn-success btn-sm" style="justify-content:center;" onclick="submitVote('무죄')">🛡️ 무죄</button>`;
+  } else {
+    document.getElementById('guiltyLabel').textContent = '원고 승';
+    document.getElementById('notGuiltyLabel').textContent = '피고 승';
+    document.getElementById('voteButtons').innerHTML = `
+      <button class="btn btn-primary btn-sm" style="justify-content:center;background:var(--civil);" onclick="submitVote('원고승')">📜 원고 승</button>
+      <button class="btn btn-sm" style="justify-content:center;background:var(--civil-loss);color:white;border:none;" onclick="submitVote('피고승')">🧑 피고 승</button>`;
+  }
 
   renderStatements(c.statements || []);
   renderEvidence(c.evidence || []);
@@ -249,21 +334,44 @@ function renderCase(c) {
   }
 }
 
-function showVerdictBanner(c) {
-  const banner = document.getElementById('verdictBanner');
-  const result = document.getElementById('verdictResult');
-  const stamp = document.getElementById('verdictStamp');
-  const reason = document.getElementById('verdictReason');
-  banner.style.display = 'block';
-
-  const cls = c.verdict === '유죄' ? 'guilty' : c.verdict === '무죄' ? 'notguilty' : 'mixed';
-  result.textContent = c.verdict;
-  result.className = `verdict-result ${cls}`;
-  stamp.textContent = c.verdict;
-  stamp.className = `verdict-stamp ${cls}`;
-  reason.textContent = c.verdict_reason || '';
+function onVerdictChange() {
+  const type = (caseData?.case_type) || '형사';
+  const val = document.getElementById('verdictSelect').value;
+  const info = VERDICTS[type]?.find(v => v.value === val);
+  const pg = document.getElementById('punishmentGroup');
+  if (info?.punishment) {
+    pg.style.display = 'block';
+    document.getElementById('punishmentLabel').textContent = info.punishmentLabel || '형량';
+    document.getElementById('punishmentInput').placeholder = info.punishmentPlaceholder || '예: 징역 1년, 벌금 100만원';
+  } else {
+    pg.style.display = 'none';
+  }
 }
 
+function showVerdictBanner(c) {
+  const type = c.case_type || '형사';
+  const verdictInfo = VERDICTS[type]?.find(v => v.value === c.verdict) || { cls: 'dismissed', joomun: '' };
+  const banner = document.getElementById('verdictBanner');
+  banner.className = `verdict-banner ${type === '형사' ? 'criminal' : 'civil'}`;
+  banner.style.display = 'block';
+
+  document.getElementById('verdictStamp').className = `verdict-stamp ${verdictInfo.cls}`;
+  document.getElementById('verdictStamp').textContent = c.verdict;
+  document.getElementById('verdictJoomun').textContent = verdictInfo.joomun;
+  document.getElementById('verdictResult').className = `verdict-result ${verdictInfo.cls}`;
+  document.getElementById('verdictResult').textContent = c.verdict;
+
+  const punEl = document.getElementById('verdictPunishment');
+  if (c.punishment) {
+    punEl.style.display = 'block';
+    punEl.textContent = c.punishment;
+  } else {
+    punEl.style.display = 'none';
+  }
+  document.getElementById('verdictReasonText').textContent = c.verdict_reason || '';
+}
+
+// ── 발언 렌더링 ──────────────────────────────────────────────
 function renderStatements(stmts) {
   const el = document.getElementById('statementsList');
   document.getElementById('stmtCount').textContent = `${stmts.length}건`;
@@ -271,12 +379,13 @@ function renderStatements(stmts) {
     el.innerHTML = `<div class="empty-state" style="padding:32px 20px;"><div class="empty-icon" style="font-size:32px;">💬</div><p style="font-size:13px;">아직 발언이 없습니다</p></div>`;
     return;
   }
-  const roleLabel = { judge:'판사', prosecutor:'검사', defender:'변호인', witness:'증인', juror:'배심원' };
+  const type = caseData?.case_type || '형사';
   el.innerHTML = stmts.map(s => {
-    const time = new Date(s.created_at).toLocaleTimeString('ko-KR', {hour:'2-digit',minute:'2-digit'});
+    const time = new Date(s.created_at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+    const label = ROLE_LABELS[type]?.[s.role] || s.role;
     return `<div class="statement-item role-${s.role}">
       <div class="statement-meta">
-        <span class="role-tag ${s.role}">${roleLabel[s.role] || s.role}</span>
+        <span class="role-tag ${s.role}">${label}</span>
         <span class="statement-author">${escHtml(s.author)}</span>
         <span class="statement-time">${time}</span>
       </div>
@@ -286,6 +395,7 @@ function renderStatements(stmts) {
   el.scrollTop = el.scrollHeight;
 }
 
+// ── 증거 렌더링 ──────────────────────────────────────────────
 function renderEvidence(evs) {
   const el = document.getElementById('evidenceList');
   if (!evs.length) {
@@ -294,39 +404,44 @@ function renderEvidence(evs) {
   }
   el.innerHTML = evs.map((e, i) => `
     <div class="evidence-item">
-      <div class="evidence-title">증거 ${i+1}. ${escHtml(e.title)}</div>
+      <div class="evidence-title">증거 ${i + 1}. ${escHtml(e.title)}</div>
       <div class="evidence-submitter">제출: ${escHtml(e.submitted_by)}</div>
       <div class="evidence-content">${escHtml(e.content)}</div>
     </div>`).join('');
 }
 
+// ── 투표 렌더링 ──────────────────────────────────────────────
 function renderVotes(votes) {
-  const guilty = votes.filter(v => v.vote === '유죄').length;
-  const notGuilty = votes.filter(v => v.vote === '무죄').length;
+  const type = caseData?.case_type || '형사';
+  const isCriminal = type === '형사';
+  const label1 = isCriminal ? '유죄' : '원고승';
+  const label2 = isCriminal ? '무죄' : '피고승';
+  const side1 = votes.filter(v => v.vote === label1).length;
+  const side2 = votes.filter(v => v.vote === label2).length;
   const total = votes.length || 1;
-  document.getElementById('guiltyCount').textContent = guilty;
-  document.getElementById('notGuiltyCount').textContent = notGuilty;
-  document.getElementById('guiltyBar').style.width = (guilty / total * 100) + '%';
-  document.getElementById('notGuiltyBar').style.width = (notGuilty / total * 100) + '%';
+  document.getElementById('guiltyCount').textContent = side1;
+  document.getElementById('notGuiltyCount').textContent = side2;
+  document.getElementById('guiltyBar').style.width = (side1 / total * 100) + '%';
+  document.getElementById('notGuiltyBar').style.width = (side2 / total * 100) + '%';
 
   const listEl = document.getElementById('voterList');
   if (votes.length) {
     listEl.innerHTML = `<div style="font-size:11px;color:#aaa;margin-bottom:6px;">투표 현황</div>` +
       votes.map(v => `<div style="font-size:12px;display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #f0ede8;">
         <span>${escHtml(v.voter)}</span>
-        <span style="font-weight:700;color:${v.vote==='유죄'?'#8b1a1a':'#1a5c2e'}">${v.vote}</span>
+        <span style="font-weight:700;">${escHtml(v.vote)}</span>
       </div>`).join('');
   }
 }
 
+// ── API 호출 ─────────────────────────────────────────────────
 async function submitStatement() {
   const author = document.getElementById('stmtAuthor').value.trim();
   const role = document.getElementById('stmtRole').value;
   const content = document.getElementById('stmtContent').value.trim();
   if (!author || !content) { toast('닉네임과 발언 내용을 입력해주세요.', 'error'); return; }
   const res = await fetch(`/api/cases/${CASE_ID}/statements`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ author, role, content })
   });
   const data = await res.json();
@@ -340,8 +455,7 @@ async function submitEvidence() {
   const content = document.getElementById('evidenceContent').value.trim();
   if (!submitted_by || !title || !content) { toast('모든 항목을 입력해주세요.', 'error'); return; }
   const res = await fetch(`/api/cases/${CASE_ID}/evidence`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ submitted_by, title, content })
   });
   const data = await res.json();
@@ -355,8 +469,7 @@ async function submitVote(vote) {
   const voter = document.getElementById('voterName').value.trim();
   if (!voter) { toast('닉네임을 입력해주세요.', 'error'); return; }
   const res = await fetch(`/api/cases/${CASE_ID}/votes`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ voter, vote })
   });
   const data = await res.json();
@@ -367,13 +480,13 @@ async function submitVote(vote) {
 
 async function submitVerdict() {
   const verdict = document.getElementById('verdictSelect').value;
-  const verdict_reason = document.getElementById('verdictReason').value.trim();
+  const punishment = document.getElementById('punishmentInput').value.trim();
+  const verdict_reason = document.getElementById('verdictReasonInput').value.trim();
   if (!verdict_reason) { toast('판결 이유를 입력해주세요.', 'error'); return; }
-  if (!confirm(`정말 "${verdict}" 판결을 선고하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`)) return;
+  if (!confirm(`"${verdict}" 판결을 선고하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`)) return;
   const res = await fetch(`/api/cases/${CASE_ID}/verdict`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ verdict, verdict_reason })
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ verdict, punishment, verdict_reason })
   });
   const data = await res.json();
   if (data.error) { toast(data.error, 'error'); return; }
@@ -383,35 +496,39 @@ function copyLink() {
   navigator.clipboard.writeText(location.href).then(() => toast('링크가 복사되었습니다!', 'success'));
 }
 
-// 실시간 소켓
+// ── 소켓 ─────────────────────────────────────────────────────
 socket.emit('join_case', CASE_ID);
 socket.on('new_statement', (stmt) => {
-  caseData.statements = [...(caseData.statements||[]), stmt];
+  caseData.statements = [...(caseData.statements || []), stmt];
   renderStatements(caseData.statements);
 });
 socket.on('new_evidence', (ev) => {
-  caseData.evidence = [...(caseData.evidence||[]), ev];
+  caseData.evidence = [...(caseData.evidence || []), ev];
   renderEvidence(caseData.evidence);
-  toast(`새 증거 제출: ${ev.title}`, '');
+  toast(`새 증거 제출: ${ev.title}`);
 });
 socket.on('vote_update', (votes) => {
   caseData.votes = votes;
   renderVotes(votes);
 });
 socket.on('verdict', (updated) => {
-  caseData = { ...caseData, ...updated };
+  Object.assign(caseData, updated);
   showVerdictBanner(updated);
   document.getElementById('statementFormArea').style.display = 'none';
   document.getElementById('evidenceFormArea').style.display = 'none';
   document.getElementById('voteFormArea').style.display = 'none';
   document.getElementById('judgePanelWrap').style.display = 'none';
-  toast(`판결이 선고되었습니다: ${updated.verdict}`, updated.verdict==='유죄' ? 'error' : 'success');
+  toast(`판결 선고: ${updated.verdict}`, 'success');
+});
+
+// Enter 전송
+document.getElementById('stmtContent').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitStatement(); }
 });
 
 function escHtml(str) {
   return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
-
 function toast(msg, type = '') {
   const el = document.createElement('div');
   el.className = `toast ${type}`;
@@ -419,13 +536,6 @@ function toast(msg, type = '') {
   document.getElementById('toastContainer').appendChild(el);
   setTimeout(() => el.remove(), 3500);
 }
-
-document.getElementById('stmtContent').addEventListener('keydown', (e) => {
-  if (e.key === 'Enter' && !e.shiftKey) {
-    e.preventDefault();
-    submitStatement();
-  }
-});
 
 loadCase();
 </script>

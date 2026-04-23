@@ -12,8 +12,23 @@
   --cream: #faf7f0;
   --text-dark: #1a1a2e;
   --text-mid: #3d3d5c;
-  --red-verdict: #8b1a1a;
-  --green-verdict: #1a5c2e;
+  /* 형사 */
+  --criminal: #7a1a1a;
+  --criminal-light: #fdf0f0;
+  --criminal-border: #e8b8b8;
+  --criminal-badge: #c0392b;
+  /* 민사 */
+  --civil: #1a3a6a;
+  --civil-light: #f0f4fd;
+  --civil-border: #b8ccf0;
+  --civil-badge: #2563a8;
+  /* 판결 */
+  --guilty: #8b1a1a;
+  --notguilty: #1a5c2e;
+  --dismissed: #5a5a7a;
+  --civil-win: #1a4a8a;
+  --civil-loss: #7a4a10;
+  --settlement: #1a6a5a;
   --shadow: 0 4px 24px rgba(26,39,68,0.18);
   --shadow-sm: 0 2px 8px rgba(26,39,68,0.10);
 }
@@ -41,465 +56,161 @@ body {
   content: '';
   position: absolute;
   inset: 0;
-  background: repeating-linear-gradient(
-    90deg,
-    transparent,
-    transparent 60px,
-    rgba(201,168,76,0.04) 60px,
-    rgba(201,168,76,0.04) 61px
-  );
+  background: repeating-linear-gradient(90deg, transparent, transparent 60px, rgba(201,168,76,0.04) 60px, rgba(201,168,76,0.04) 61px);
 }
-.court-emblem {
-  font-size: 52px;
-  line-height: 1;
-  margin-bottom: 6px;
-  filter: drop-shadow(0 2px 8px rgba(201,168,76,0.5));
-}
-.court-title {
-  font-size: 28px;
-  font-weight: 800;
-  letter-spacing: 6px;
-  color: var(--gold-light);
-  text-shadow: 0 2px 12px rgba(0,0,0,0.4);
-  margin-bottom: 4px;
-}
-.court-subtitle {
-  font-size: 13px;
-  letter-spacing: 3px;
-  color: rgba(245,240,232,0.65);
-  font-weight: 400;
-}
-.header-divider {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  justify-content: center;
-  margin-top: 14px;
-}
-.header-divider span {
-  height: 1px;
-  width: 80px;
-  background: linear-gradient(90deg, transparent, var(--gold), transparent);
-  display: block;
-}
+.court-emblem { font-size: 52px; line-height: 1; margin-bottom: 6px; filter: drop-shadow(0 2px 8px rgba(201,168,76,0.5)); }
+.court-title { font-size: 28px; font-weight: 800; letter-spacing: 6px; color: var(--gold-light); text-shadow: 0 2px 12px rgba(0,0,0,0.4); margin-bottom: 4px; }
+.court-subtitle { font-size: 13px; letter-spacing: 3px; color: rgba(245,240,232,0.65); font-weight: 400; }
+.header-divider { display: flex; align-items: center; gap: 12px; justify-content: center; margin-top: 14px; }
+.header-divider span { height: 1px; width: 80px; background: linear-gradient(90deg, transparent, var(--gold), transparent); display: block; }
 .header-divider i { color: var(--gold); font-size: 14px; }
 
 /* ===== 네비 ===== */
-.court-nav {
-  background: var(--navy);
-  border-bottom: 2px solid var(--gold-dark);
-  padding: 0 24px;
-  display: flex;
-  gap: 0;
-}
-.court-nav a {
-  color: rgba(245,240,232,0.7);
-  text-decoration: none;
-  padding: 12px 20px;
-  font-size: 14px;
-  letter-spacing: 1px;
-  border-bottom: 3px solid transparent;
-  transition: all 0.2s;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.court-nav a:hover, .court-nav a.active {
-  color: var(--gold-light);
-  border-bottom-color: var(--gold);
-}
+.court-nav { background: var(--navy); border-bottom: 2px solid var(--gold-dark); padding: 0 24px; display: flex; }
+.court-nav a { color: rgba(245,240,232,0.7); text-decoration: none; padding: 12px 20px; font-size: 14px; letter-spacing: 1px; border-bottom: 3px solid transparent; transition: all 0.2s; display: flex; align-items: center; gap: 6px; }
+.court-nav a:hover, .court-nav a.active { color: var(--gold-light); border-bottom-color: var(--gold); }
 
 /* ===== 컨테이너 ===== */
-.container {
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 32px 20px;
-}
+.container { max-width: 1100px; margin: 0 auto; padding: 32px 20px; }
 
 /* ===== 섹션 타이틀 ===== */
-.section-title {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 24px;
-  padding-bottom: 12px;
-  border-bottom: 2px solid var(--gold-dark);
-}
-.section-title h2 {
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--navy);
-  letter-spacing: 2px;
-}
+.section-title { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; padding-bottom: 12px; border-bottom: 2px solid var(--gold-dark); }
+.section-title h2 { font-size: 20px; font-weight: 700; color: var(--navy); letter-spacing: 2px; }
 .section-title .title-icon { font-size: 22px; }
-.section-title .line {
-  flex: 1;
-  height: 1px;
-  background: linear-gradient(90deg, var(--gold-dark), transparent);
-}
+.section-title .line { flex: 1; height: 1px; background: linear-gradient(90deg, var(--gold-dark), transparent); }
 
 /* ===== 버튼 ===== */
-.btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 22px;
-  border-radius: 4px;
-  font-family: inherit;
-  font-size: 14px;
-  font-weight: 700;
-  letter-spacing: 1px;
-  cursor: pointer;
-  border: 2px solid transparent;
-  transition: all 0.2s;
-  text-decoration: none;
-}
-.btn-primary {
-  background: var(--navy);
-  color: var(--gold-light);
-  border-color: var(--gold-dark);
-}
-.btn-primary:hover {
-  background: var(--navy-light);
-  border-color: var(--gold-light);
-  box-shadow: 0 0 16px rgba(201,168,76,0.25);
-}
-.btn-gold {
-  background: var(--gold);
-  color: var(--navy-dark);
-  border-color: var(--gold-dark);
-}
+.btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 22px; border-radius: 4px; font-family: inherit; font-size: 14px; font-weight: 700; letter-spacing: 1px; cursor: pointer; border: 2px solid transparent; transition: all 0.2s; text-decoration: none; }
+.btn-primary { background: var(--navy); color: var(--gold-light); border-color: var(--gold-dark); }
+.btn-primary:hover { background: var(--navy-light); border-color: var(--gold-light); box-shadow: 0 0 16px rgba(201,168,76,0.25); }
+.btn-gold { background: var(--gold); color: var(--navy-dark); border-color: var(--gold-dark); }
 .btn-gold:hover { background: var(--gold-light); }
-.btn-danger {
-  background: var(--red-verdict);
-  color: var(--ivory);
-  border-color: #6b1212;
-}
+.btn-danger { background: var(--guilty); color: var(--ivory); border-color: #6b1212; }
 .btn-danger:hover { background: #a01e1e; }
-.btn-success {
-  background: var(--green-verdict);
-  color: var(--ivory);
-  border-color: #134820;
-}
+.btn-success { background: var(--notguilty); color: var(--ivory); border-color: #134820; }
 .btn-success:hover { background: #1f6b35; }
 .btn-sm { padding: 6px 14px; font-size: 13px; }
-.btn-outline {
-  background: transparent;
-  color: var(--navy);
-  border-color: var(--navy);
-}
+.btn-outline { background: transparent; color: var(--navy); border-color: var(--navy); }
 .btn-outline:hover { background: var(--navy); color: var(--ivory); }
 
-/* ===== 사건 카드 ===== */
-.cases-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 20px;
-}
-.case-card {
-  background: var(--cream);
-  border: 1px solid var(--ivory-dark);
-  border-top: 4px solid var(--gold-dark);
-  border-radius: 6px;
-  padding: 20px;
-  box-shadow: var(--shadow-sm);
-  cursor: pointer;
-  transition: all 0.25s;
-  text-decoration: none;
-  color: inherit;
-  display: block;
-}
-.case-card:hover {
-  transform: translateY(-3px);
-  box-shadow: var(--shadow);
-  border-top-color: var(--gold);
-}
-.case-card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 10px;
-}
-.case-number {
-  font-size: 11px;
-  color: var(--gold-dark);
-  letter-spacing: 1px;
-  font-weight: 700;
-}
-.badge {
-  padding: 3px 10px;
-  border-radius: 20px;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 1px;
-}
-.badge-in_progress { background: #e8f0fe; color: #1a47a0; border: 1px solid #b8caf8; }
-.badge-closed-guilty { background: #fce8e8; color: var(--red-verdict); border: 1px solid #f0b8b8; }
-.badge-closed-notguilty { background: #e8f5ec; color: var(--green-verdict); border: 1px solid #b8dfc4; }
-.badge-closed { background: #f0ede8; color: #5c4a2a; border: 1px solid #d4c8b0; }
+/* ===== 사건 유형 토글 ===== */
+.case-type-toggle { display: flex; gap: 0; border: 2px solid var(--ivory-dark); border-radius: 6px; overflow: hidden; margin-bottom: 20px; }
+.case-type-btn { flex: 1; padding: 12px; text-align: center; cursor: pointer; font-family: inherit; font-size: 15px; font-weight: 700; letter-spacing: 2px; border: none; background: white; color: #888; transition: all 0.2s; }
+.case-type-btn.criminal.active { background: var(--criminal); color: white; }
+.case-type-btn.civil.active { background: var(--civil); color: white; }
+.case-type-btn:not(.active):hover { background: var(--ivory); }
 
-.case-title {
-  font-size: 17px;
-  font-weight: 700;
-  margin-bottom: 8px;
-  color: var(--navy);
-  line-height: 1.4;
-}
-.case-parties {
-  font-size: 13px;
-  color: var(--text-mid);
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  margin-bottom: 10px;
-}
-.case-parties .vs {
-  color: var(--gold-dark);
-  font-weight: 700;
-  font-size: 11px;
-}
-.case-desc {
-  font-size: 13px;
-  color: var(--text-mid);
-  line-height: 1.6;
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  margin-bottom: 12px;
-}
-.case-meta {
-  font-size: 11px;
-  color: #8888aa;
-  display: flex;
-  gap: 12px;
-}
+/* ===== 사건 카드 ===== */
+.cases-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
+.case-card { background: var(--cream); border: 1px solid var(--ivory-dark); border-top: 4px solid var(--gold-dark); border-radius: 6px; padding: 20px; box-shadow: var(--shadow-sm); cursor: pointer; transition: all 0.25s; text-decoration: none; color: inherit; display: block; }
+.case-card:hover { transform: translateY(-3px); box-shadow: var(--shadow); }
+.case-card.criminal { border-top-color: var(--criminal); background: #fefcfc; }
+.case-card.criminal:hover { border-top-color: #c0392b; }
+.case-card.civil { border-top-color: var(--civil); background: #fcfdff; }
+.case-card.civil:hover { border-top-color: #2563a8; }
+
+.case-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; gap: 8px; flex-wrap: wrap; }
+.case-number { font-size: 11px; color: var(--gold-dark); letter-spacing: 1px; font-weight: 700; }
+.case-number.criminal { color: var(--criminal); }
+.case-number.civil { color: var(--civil); }
+
+.badge { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; letter-spacing: 1px; }
+.badge-type-criminal { background: #fce8e8; color: var(--criminal); border: 1px solid var(--criminal-border); }
+.badge-type-civil { background: var(--civil-light); color: var(--civil); border: 1px solid var(--civil-border); }
+.badge-in_progress { background: #e8f0fe; color: #1a47a0; border: 1px solid #b8caf8; }
+.badge-closed { background: #f0ede8; color: #5c4a2a; border: 1px solid #d4c8b0; }
+.badge-guilty { background: #fce8e8; color: var(--guilty); border: 1px solid #f0b8b8; }
+.badge-notguilty { background: #e8f5ec; color: var(--notguilty); border: 1px solid #b8dfc4; }
+.badge-dismissed { background: #eeeef5; color: var(--dismissed); border: 1px solid #ccccdd; }
+.badge-civil-win { background: #e8eeff; color: var(--civil-win); border: 1px solid #b8ccee; }
+.badge-civil-loss { background: #fff3e8; color: var(--civil-loss); border: 1px solid #eeccaa; }
+.badge-settlement { background: #e8f5f2; color: var(--settlement); border: 1px solid #aaddcc; }
+
+.case-title { font-size: 17px; font-weight: 700; margin-bottom: 8px; color: var(--navy); line-height: 1.4; }
+.case-parties { font-size: 13px; color: var(--text-mid); display: flex; gap: 8px; align-items: center; margin-bottom: 10px; flex-wrap: wrap; }
+.case-parties .vs { color: var(--gold-dark); font-weight: 700; font-size: 11px; }
+.case-parties .vs.criminal { color: var(--criminal); }
+.case-parties .vs.civil { color: var(--civil); }
+.case-desc { font-size: 13px; color: var(--text-mid); line-height: 1.6; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; margin-bottom: 12px; }
+.case-meta { font-size: 11px; color: #8888aa; display: flex; gap: 12px; flex-wrap: wrap; }
+
+/* ===== 필터 탭 ===== */
+.filter-tabs { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+.filter-tab { padding: 6px 16px; border-radius: 20px; font-family: inherit; font-size: 13px; font-weight: 700; letter-spacing: 1px; cursor: pointer; border: 2px solid transparent; transition: all 0.2s; background: white; color: #888; border-color: #ddd; }
+.filter-tab.active { border-color: var(--navy); background: var(--navy); color: var(--gold-light); }
+.filter-tab.criminal.active { border-color: var(--criminal); background: var(--criminal); color: white; }
+.filter-tab.civil.active { border-color: var(--civil); background: var(--civil); color: white; }
 
 /* ===== 모달 ===== */
-.modal-overlay {
-  display: none;
-  position: fixed;
-  inset: 0;
-  background: rgba(10,15,35,0.75);
-  z-index: 1000;
-  align-items: center;
-  justify-content: center;
-  backdrop-filter: blur(2px);
-}
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(10,15,35,0.75); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(2px); }
 .modal-overlay.active { display: flex; }
-.modal {
-  background: var(--cream);
-  border: 1px solid var(--ivory-dark);
-  border-top: 5px solid var(--gold);
-  border-radius: 8px;
-  width: 100%;
-  max-width: 560px;
-  max-height: 90vh;
-  overflow-y: auto;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.4);
-  animation: modalIn 0.2s ease;
-}
-@keyframes modalIn {
-  from { opacity: 0; transform: translateY(-20px) scale(0.97); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
-}
-.modal-header {
-  background: var(--navy);
-  color: var(--gold-light);
-  padding: 18px 24px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
+.modal { background: var(--cream); border: 1px solid var(--ivory-dark); border-top: 5px solid var(--gold); border-radius: 8px; width: 100%; max-width: 560px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.4); animation: modalIn 0.2s ease; }
+.modal.criminal { border-top-color: var(--criminal); }
+.modal.civil { border-top-color: var(--civil); }
+@keyframes modalIn { from { opacity: 0; transform: translateY(-20px) scale(0.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
+.modal-header { background: var(--navy); color: var(--gold-light); padding: 18px 24px; display: flex; justify-content: space-between; align-items: center; }
+.modal-header.criminal { background: var(--criminal); }
+.modal-header.civil { background: var(--civil); }
 .modal-header h3 { font-size: 16px; letter-spacing: 2px; }
-.modal-close {
-  background: none;
-  border: none;
-  color: rgba(245,240,232,0.6);
-  cursor: pointer;
-  font-size: 20px;
-  line-height: 1;
-  padding: 2px 6px;
-  transition: color 0.2s;
-}
+.modal-close { background: none; border: none; color: rgba(245,240,232,0.6); cursor: pointer; font-size: 20px; line-height: 1; padding: 2px 6px; transition: color 0.2s; }
 .modal-close:hover { color: var(--gold-light); }
 .modal-body { padding: 24px; }
 
 /* ===== 폼 ===== */
 .form-group { margin-bottom: 18px; }
-.form-group label {
-  display: block;
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--navy);
-  letter-spacing: 1px;
-  margin-bottom: 6px;
-}
+.form-group label { display: block; font-size: 13px; font-weight: 700; color: var(--navy); letter-spacing: 1px; margin-bottom: 6px; }
 .form-group label .required { color: var(--gold-dark); margin-left: 4px; }
-.form-group input,
-.form-group textarea,
-.form-group select {
-  width: 100%;
-  padding: 10px 14px;
-  border: 1.5px solid var(--ivory-dark);
-  border-radius: 4px;
-  font-family: inherit;
-  font-size: 14px;
-  background: white;
-  color: var(--text-dark);
-  transition: border-color 0.2s;
-}
-.form-group input:focus,
-.form-group textarea:focus,
-.form-group select:focus {
-  outline: none;
-  border-color: var(--gold-dark);
-  box-shadow: 0 0 0 3px rgba(201,168,76,0.12);
-}
+.form-group input, .form-group textarea, .form-group select { width: 100%; padding: 10px 14px; border: 1.5px solid var(--ivory-dark); border-radius: 4px; font-family: inherit; font-size: 14px; background: white; color: var(--text-dark); transition: border-color 0.2s; }
+.form-group input:focus, .form-group textarea:focus, .form-group select:focus { outline: none; border-color: var(--gold-dark); box-shadow: 0 0 0 3px rgba(201,168,76,0.12); }
 .form-group textarea { resize: vertical; min-height: 90px; }
-.form-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 14px;
-}
-.form-actions {
-  display: flex;
-  gap: 10px;
-  justify-content: flex-end;
-  padding-top: 16px;
-  border-top: 1px solid var(--ivory-dark);
-  margin-top: 4px;
-}
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.form-actions { display: flex; gap: 10px; justify-content: flex-end; padding-top: 16px; border-top: 1px solid var(--ivory-dark); margin-top: 4px; }
 
-/* ===== 재판 페이지 ===== */
-.trial-layout {
-  display: grid;
-  grid-template-columns: 1fr 340px;
-  gap: 24px;
-  align-items: start;
-}
-@media (max-width: 900px) {
-  .trial-layout { grid-template-columns: 1fr; }
-}
+/* ===== 재판 레이아웃 ===== */
+.trial-layout { display: grid; grid-template-columns: 1fr 340px; gap: 24px; align-items: start; }
+@media (max-width: 900px) { .trial-layout { grid-template-columns: 1fr; } }
 
-.trial-info-card {
-  background: var(--navy);
-  color: var(--ivory);
-  border-radius: 8px;
-  padding: 24px;
-  margin-bottom: 24px;
-  border: 1px solid var(--navy-light);
-  position: relative;
-  overflow: hidden;
-}
-.trial-info-card::after {
-  content: '⚖️';
-  position: absolute;
-  right: 20px;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 64px;
-  opacity: 0.08;
-}
-.trial-case-number {
-  font-size: 11px;
-  color: var(--gold);
-  letter-spacing: 2px;
-  margin-bottom: 6px;
-}
-.trial-case-title {
-  font-size: 22px;
-  font-weight: 800;
-  color: var(--gold-light);
-  margin-bottom: 12px;
-  line-height: 1.3;
-}
-.trial-parties {
-  display: flex;
-  gap: 16px;
-  align-items: center;
-  margin-bottom: 12px;
-}
-.party-box {
-  background: rgba(255,255,255,0.07);
-  border: 1px solid rgba(201,168,76,0.2);
-  border-radius: 6px;
-  padding: 8px 14px;
-  text-align: center;
-  flex: 1;
-}
-.party-label { font-size: 10px; color: var(--gold); letter-spacing: 2px; margin-bottom: 4px; }
+/* ===== 사건 정보 카드 ===== */
+.trial-info-card { border-radius: 8px; padding: 24px; margin-bottom: 24px; border: 1px solid; position: relative; overflow: hidden; }
+.trial-info-card.criminal { background: linear-gradient(160deg, #3a0a0a 0%, var(--criminal) 60%, #9a2a2a 100%); border-color: #7a1a1a; color: var(--ivory); }
+.trial-info-card.civil { background: linear-gradient(160deg, #0a1a3a 0%, var(--civil) 60%, #2a4a8a 100%); border-color: var(--civil); color: var(--ivory); }
+.trial-info-card::after { content: '⚖️'; position: absolute; right: 20px; top: 50%; transform: translateY(-50%); font-size: 64px; opacity: 0.08; }
+
+.case-type-label { display: inline-block; padding: 3px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; letter-spacing: 3px; margin-bottom: 8px; }
+.case-type-label.criminal { background: rgba(255,255,255,0.15); color: #ffb8b8; border: 1px solid rgba(255,150,150,0.3); }
+.case-type-label.civil { background: rgba(255,255,255,0.15); color: #b8ccff; border: 1px solid rgba(150,180,255,0.3); }
+
+.trial-case-number { font-size: 11px; letter-spacing: 2px; margin-bottom: 6px; opacity: 0.8; }
+.trial-case-title { font-size: 22px; font-weight: 800; color: var(--gold-light); margin-bottom: 12px; line-height: 1.3; }
+.trial-parties { display: flex; gap: 16px; align-items: center; margin-bottom: 12px; flex-wrap: wrap; }
+.party-box { background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.15); border-radius: 6px; padding: 8px 14px; text-align: center; flex: 1; min-width: 100px; }
+.party-label { font-size: 10px; letter-spacing: 2px; margin-bottom: 4px; opacity: 0.7; }
 .party-name { font-size: 15px; font-weight: 700; }
-.vs-badge {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--gold);
-  letter-spacing: 1px;
-}
-.trial-desc {
-  font-size: 13px;
-  color: rgba(245,240,232,0.72);
-  line-height: 1.7;
-  margin-top: 12px;
-  padding-top: 12px;
-  border-top: 1px solid rgba(255,255,255,0.1);
-}
+.vs-badge { font-size: 11px; font-weight: 700; color: var(--gold); letter-spacing: 1px; }
+.trial-desc { font-size: 13px; color: rgba(245,240,232,0.72); line-height: 1.7; margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.1); }
 
-/* ===== 발언 기록 ===== */
-.court-record {
-  background: white;
-  border: 1px solid var(--ivory-dark);
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: var(--shadow-sm);
-}
-.record-header {
-  background: var(--navy);
-  color: var(--gold-light);
-  padding: 12px 18px;
-  font-size: 13px;
-  letter-spacing: 2px;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.statements-list {
-  padding: 16px;
-  max-height: 460px;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-.statement-item {
-  padding: 14px 16px;
-  border-radius: 6px;
-  border-left: 4px solid;
-  background: var(--cream);
-}
+/* ===== 법정 발언 기록 ===== */
+.court-record { background: white; border: 1px solid var(--ivory-dark); border-radius: 8px; overflow: hidden; box-shadow: var(--shadow-sm); }
+.record-header { background: var(--navy); color: var(--gold-light); padding: 12px 18px; font-size: 13px; letter-spacing: 2px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+.record-header.criminal { background: #5a1010; }
+.record-header.civil { background: #0a1a4a; }
+.statements-list { padding: 16px; max-height: 460px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+.statement-item { padding: 14px 16px; border-radius: 6px; border-left: 4px solid; background: var(--cream); }
 .statement-item.role-judge { border-color: var(--gold-dark); background: #fdf8ee; }
-.statement-item.role-prosecutor { border-color: #8b1a1a; background: #fdf0f0; }
+.statement-item.role-prosecutor { border-color: var(--criminal); background: var(--criminal-light); }
 .statement-item.role-defender { border-color: #1a5c2e; background: #f0fdf4; }
+.statement-item.role-plaintiff { border-color: var(--civil); background: var(--civil-light); }
+.statement-item.role-defendant { border-color: #7a4a10; background: #fdf5ec; }
 .statement-item.role-witness { border-color: #4a3080; background: #f5f0fd; }
 .statement-item.role-juror { border-color: #2060a0; background: #f0f4fd; }
 
-.statement-meta {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 6px;
-}
-.role-tag {
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 1px;
-  padding: 2px 8px;
-  border-radius: 20px;
-}
+.statement-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.role-tag { font-size: 10px; font-weight: 700; letter-spacing: 1px; padding: 2px 8px; border-radius: 20px; }
 .role-tag.judge { background: var(--gold-dark); color: white; }
-.role-tag.prosecutor { background: #8b1a1a; color: white; }
+.role-tag.prosecutor { background: var(--criminal); color: white; }
 .role-tag.defender { background: #1a5c2e; color: white; }
+.role-tag.plaintiff { background: var(--civil); color: white; }
+.role-tag.defendant { background: #7a4a10; color: white; }
 .role-tag.witness { background: #4a3080; color: white; }
 .role-tag.juror { background: #2060a0; color: white; }
 
@@ -508,227 +219,94 @@ body {
 .statement-content { font-size: 14px; line-height: 1.7; color: var(--text-dark); }
 
 /* ===== 발언 입력 ===== */
-.statement-form {
-  border-top: 2px solid var(--ivory-dark);
-  padding: 16px;
-  background: var(--ivory);
-}
-.statement-form-inner {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  margin-bottom: 10px;
-}
+.statement-form { border-top: 2px solid var(--ivory-dark); padding: 16px; background: var(--ivory); }
+.statement-form-inner { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
 
 /* ===== 사이드바 카드 ===== */
-.sidebar-card {
-  background: white;
-  border: 1px solid var(--ivory-dark);
-  border-radius: 8px;
-  overflow: hidden;
-  margin-bottom: 20px;
-  box-shadow: var(--shadow-sm);
-}
-.sidebar-card-header {
-  background: var(--navy-dark);
-  color: var(--gold-light);
-  padding: 10px 16px;
-  font-size: 12px;
-  letter-spacing: 2px;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
+.sidebar-card { background: white; border: 1px solid var(--ivory-dark); border-radius: 8px; overflow: hidden; margin-bottom: 20px; box-shadow: var(--shadow-sm); }
+.sidebar-card-header { background: var(--navy-dark); color: var(--gold-light); padding: 10px 16px; font-size: 12px; letter-spacing: 2px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
 .sidebar-card-body { padding: 14px; }
 
 /* ===== 증거 ===== */
 .evidence-list { display: flex; flex-direction: column; gap: 10px; }
-.evidence-item {
-  background: var(--cream);
-  border: 1px solid var(--ivory-dark);
-  border-left: 3px solid var(--gold-dark);
-  border-radius: 4px;
-  padding: 10px 12px;
-}
-.evidence-title {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--navy);
-  margin-bottom: 4px;
-}
-.evidence-submitter {
-  font-size: 11px;
-  color: var(--gold-dark);
-  margin-bottom: 4px;
-}
+.evidence-item { background: var(--cream); border: 1px solid var(--ivory-dark); border-left: 3px solid var(--gold-dark); border-radius: 4px; padding: 10px 12px; }
+.evidence-title { font-size: 13px; font-weight: 700; color: var(--navy); margin-bottom: 4px; }
+.evidence-submitter { font-size: 11px; color: var(--gold-dark); margin-bottom: 4px; }
 .evidence-content { font-size: 13px; color: var(--text-mid); line-height: 1.5; }
 
 /* ===== 투표 ===== */
-.vote-section { }
-.vote-counts {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  margin-bottom: 14px;
-}
-.vote-count-box {
-  text-align: center;
-  padding: 10px;
-  border-radius: 6px;
-}
+.vote-counts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+.vote-count-box { text-align: center; padding: 10px; border-radius: 6px; }
 .vote-count-box.guilty { background: #fce8e8; border: 1px solid #f0b8b8; }
 .vote-count-box.notguilty { background: #e8f5ec; border: 1px solid #b8dfc4; }
 .vote-count-label { font-size: 11px; font-weight: 700; letter-spacing: 1px; margin-bottom: 4px; }
-.guilty .vote-count-label { color: var(--red-verdict); }
-.notguilty .vote-count-label { color: var(--green-verdict); }
+.guilty .vote-count-label { color: var(--guilty); }
+.notguilty .vote-count-label { color: var(--notguilty); }
 .vote-count-num { font-size: 28px; font-weight: 800; }
-.guilty .vote-count-num { color: var(--red-verdict); }
-.notguilty .vote-count-num { color: var(--green-verdict); }
-
+.guilty .vote-count-num { color: var(--guilty); }
+.notguilty .vote-count-num { color: var(--notguilty); }
 .vote-bar-wrap { margin-bottom: 14px; }
 .vote-bar { height: 8px; background: #eee; border-radius: 4px; overflow: hidden; display: flex; }
-.vote-bar-guilty { background: var(--red-verdict); transition: width 0.5s ease; }
-.vote-bar-notguilty { background: var(--green-verdict); transition: width 0.5s ease; }
-
+.vote-bar-guilty { background: var(--guilty); transition: width 0.5s ease; }
+.vote-bar-notguilty { background: var(--notguilty); transition: width 0.5s ease; }
 .vote-form { display: flex; flex-direction: column; gap: 8px; }
-.vote-name-input {
-  width: 100%;
-  padding: 8px 12px;
-  border: 1.5px solid var(--ivory-dark);
-  border-radius: 4px;
-  font-family: inherit;
-  font-size: 13px;
-  margin-bottom: 4px;
-}
+.vote-name-input { width: 100%; padding: 8px 12px; border: 1.5px solid var(--ivory-dark); border-radius: 4px; font-family: inherit; font-size: 13px; margin-bottom: 4px; }
 .vote-name-input:focus { outline: none; border-color: var(--gold-dark); }
 .vote-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 
-/* ===== 판결 ===== */
-.verdict-banner {
-  background: linear-gradient(135deg, var(--navy-dark), var(--navy));
-  border: 3px solid var(--gold);
-  border-radius: 8px;
-  padding: 28px;
-  text-align: center;
-  margin-bottom: 24px;
-  position: relative;
-  overflow: hidden;
-}
-.verdict-banner::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(ellipse at center, rgba(201,168,76,0.1), transparent 70%);
-}
-.verdict-label {
-  font-size: 12px;
-  letter-spacing: 4px;
-  color: var(--gold);
-  margin-bottom: 10px;
-}
-.verdict-result {
-  font-size: 42px;
-  font-weight: 800;
-  margin-bottom: 12px;
-  text-shadow: 0 2px 20px rgba(0,0,0,0.5);
-}
+/* ===== 판결 배너 ===== */
+.verdict-banner { border: 3px solid var(--gold); border-radius: 8px; padding: 28px; text-align: center; margin-bottom: 24px; position: relative; overflow: hidden; }
+.verdict-banner.criminal { background: linear-gradient(135deg, #1a0505, #3a0a0a); }
+.verdict-banner.civil { background: linear-gradient(135deg, #05051a, #0a1a3a); }
+.verdict-banner::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse at center, rgba(201,168,76,0.1), transparent 70%); }
+
+.verdict-label { font-size: 12px; letter-spacing: 4px; color: var(--gold); margin-bottom: 10px; }
+
+/* 판결문 주문 */
+.verdict-joomun { font-size: 13px; letter-spacing: 1px; color: rgba(245,240,232,0.5); margin-bottom: 6px; }
+.verdict-result { font-size: 36px; font-weight: 800; margin-bottom: 8px; text-shadow: 0 2px 20px rgba(0,0,0,0.5); line-height: 1.3; }
+.verdict-punishment { font-size: 16px; font-weight: 700; color: var(--gold-light); margin-bottom: 12px; }
 .verdict-result.guilty { color: #ff6b6b; }
 .verdict-result.notguilty { color: #69db7c; }
-.verdict-result.mixed { color: var(--gold-light); }
-.verdict-reason {
-  font-size: 14px;
-  color: rgba(245,240,232,0.8);
-  line-height: 1.7;
-  background: rgba(255,255,255,0.05);
-  border: 1px solid rgba(201,168,76,0.2);
-  border-radius: 4px;
-  padding: 12px;
-  text-align: left;
-  margin-top: 12px;
-}
-.verdict-stamp {
-  display: inline-block;
-  border: 3px solid;
-  border-radius: 50%;
-  width: 90px;
-  height: 90px;
-  line-height: 84px;
-  font-size: 16px;
-  font-weight: 800;
-  letter-spacing: 1px;
-  margin-bottom: 14px;
-  position: relative;
-  z-index: 1;
-  transform: rotate(-15deg);
-}
+.verdict-result.dismissed { color: #aaaacc; }
+.verdict-result.civil-win { color: #7aa8ff; }
+.verdict-result.civil-loss { color: #ffaa44; }
+.verdict-result.settlement { color: #44ddbb; }
+
+.verdict-reason-box { font-size: 13px; color: rgba(245,240,232,0.8); line-height: 1.7; background: rgba(255,255,255,0.05); border: 1px solid rgba(201,168,76,0.2); border-radius: 4px; padding: 14px; text-align: left; margin-top: 12px; }
+.verdict-reason-label { font-size: 10px; letter-spacing: 2px; color: var(--gold); margin-bottom: 6px; }
+
+.verdict-stamp { display: inline-block; border: 3px solid; border-radius: 50%; width: 90px; height: 90px; line-height: 84px; font-size: 14px; font-weight: 800; letter-spacing: 1px; margin-bottom: 14px; position: relative; z-index: 1; transform: rotate(-15deg); }
 .verdict-stamp.guilty { border-color: #ff6b6b; color: #ff6b6b; }
 .verdict-stamp.notguilty { border-color: #69db7c; color: #69db7c; }
-.verdict-stamp.mixed { border-color: var(--gold); color: var(--gold); }
+.verdict-stamp.dismissed { border-color: #aaaacc; color: #aaaacc; }
+.verdict-stamp.civil-win { border-color: #7aa8ff; color: #7aa8ff; }
+.verdict-stamp.civil-loss { border-color: #ffaa44; color: #ffaa44; }
+.verdict-stamp.settlement { border-color: #44ddbb; color: #44ddbb; }
 
-/* 판사 판결 입력 */
-.judge-panel {
-  border: 2px solid var(--gold-dark);
-  border-radius: 8px;
-  overflow: hidden;
-  margin-bottom: 20px;
-}
-.judge-panel-header {
-  background: var(--gold-dark);
-  color: white;
-  padding: 10px 16px;
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 2px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
+/* ===== 판사 판결 패널 ===== */
+.judge-panel { border: 2px solid var(--gold-dark); border-radius: 8px; overflow: hidden; margin-bottom: 20px; }
+.judge-panel.criminal { border-color: var(--criminal); }
+.judge-panel.civil { border-color: var(--civil); }
+.judge-panel-header { background: var(--gold-dark); color: white; padding: 10px 16px; font-size: 13px; font-weight: 700; letter-spacing: 2px; display: flex; align-items: center; gap: 8px; }
+.judge-panel-header.criminal { background: var(--criminal); }
+.judge-panel-header.civil { background: var(--civil); }
 .judge-panel-body { padding: 16px; background: #fdf8ee; }
 
+/* ===== 구분선 ===== */
+.divider { height: 1px; background: linear-gradient(90deg, transparent, var(--ivory-dark), transparent); margin: 16px 0; }
+
 /* ===== 빈 상태 ===== */
-.empty-state {
-  text-align: center;
-  padding: 48px 20px;
-  color: #aaa;
-}
+.empty-state { text-align: center; padding: 48px 20px; color: #aaa; }
 .empty-state .empty-icon { font-size: 48px; margin-bottom: 12px; }
 .empty-state p { font-size: 15px; }
 
 /* ===== 토스트 ===== */
-.toast-container {
-  position: fixed;
-  bottom: 24px;
-  right: 24px;
-  z-index: 9999;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.toast {
-  background: var(--navy);
-  color: var(--ivory);
-  padding: 12px 20px;
-  border-radius: 6px;
-  border-left: 4px solid var(--gold);
-  font-size: 14px;
-  box-shadow: var(--shadow);
-  animation: toastIn 0.2s ease;
-  max-width: 320px;
-}
-@keyframes toastIn {
-  from { opacity: 0; transform: translateX(20px); }
-  to { opacity: 1; transform: translateX(0); }
-}
+.toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; }
+.toast { background: var(--navy); color: var(--ivory); padding: 12px 20px; border-radius: 6px; border-left: 4px solid var(--gold); font-size: 14px; box-shadow: var(--shadow); animation: toastIn 0.2s ease; max-width: 320px; }
+@keyframes toastIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
 .toast.error { border-left-color: #e05555; }
 .toast.success { border-left-color: #4caf7a; }
 
-/* ===== 유틸 ===== */
-.text-gold { color: var(--gold-dark); }
-.text-center { text-align: center; }
 .mt-16 { margin-top: 16px; }
-.flex { display: flex; }
-.items-center { align-items: center; }
-.gap-8 { gap: 8px; }
-.justify-between { justify-content: space-between; }
 .w-full { width: 100%; }

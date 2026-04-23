@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>판결 아카이브 — 디스코드 모의법원</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .archive-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 14px;
+      margin-bottom: 28px;
+    }
+    .stat-card {
+      background: white;
+      border: 1px solid var(--ivory-dark);
+      border-top: 3px solid var(--gold-dark);
+      border-radius: 8px;
+      padding: 16px 18px;
+      text-align: center;
+      box-shadow: var(--shadow-sm);
+    }
+    .stat-card.criminal { border-top-color: var(--criminal); }
+    .stat-card.notguilty { border-top-color: var(--notguilty); }
+    .stat-card.civil { border-top-color: var(--civil); }
+    .stat-num { font-size: 30px; font-weight: 800; color: var(--navy); line-height: 1; margin-bottom: 5px; }
+    .stat-num.criminal { color: var(--criminal); }
+    .stat-num.notguilty { color: var(--notguilty); }
+    .stat-num.civil { color: var(--civil); }
+    .stat-label { font-size: 11px; letter-spacing: 2px; color: #888; font-weight: 700; }
+
+    .search-bar { position: relative; margin-bottom: 16px; }
+    .search-bar input {
+      width: 100%;
+      padding: 11px 16px 11px 42px;
+      border: 2px solid var(--ivory-dark);
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: 14px;
+      background: white;
+      transition: border-color 0.2s;
+    }
+    .search-bar input:focus { outline: none; border-color: var(--gold-dark); box-shadow: 0 0 0 3px rgba(201,168,76,0.1); }
+    .search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 16px; color: #bbb; pointer-events: none; }
+
+    .verdicts-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 18px; }
+
+    .verdict-card {
+      background: white;
+      border: 1px solid var(--ivory-dark);
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+      cursor: pointer;
+      transition: all 0.25s;
+      display: flex;
+      flex-direction: column;
+    }
+    .verdict-card:hover { transform: translateY(-3px); box-shadow: var(--shadow); }
+
+    .vc-hero {
+      padding: 18px 18px 16px;
+      position: relative;
+      overflow: hidden;
+    }
+    .vc-hero.criminal { background: linear-gradient(150deg, #200808, #4a1010, #7a1a1a); }
+    .vc-hero.civil    { background: linear-gradient(150deg, #081020, #0f2050, #1a3a7a); }
+    .vc-hero::after { content: '⚖️'; position: absolute; right: 12px; bottom: 4px; font-size: 48px; opacity: 0.07; }
+
+    .vc-case-num { font-size: 10px; color: rgba(245,240,232,0.55); letter-spacing: 2px; margin-bottom: 6px; }
+    .vc-title { font-size: 15px; font-weight: 700; color: var(--gold-light); margin-bottom: 8px; line-height: 1.4; }
+    .vc-parties { display: flex; gap: 6px; align-items: center; font-size: 12px; color: rgba(245,240,232,0.75); flex-wrap: wrap; }
+    .vc-vs { color: var(--gold); font-weight: 700; font-size: 10px; }
+
+    .vc-bottom {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 18px;
+      background: var(--cream);
+      border-top: 2px solid;
+      flex: 1;
+    }
+    .vc-bottom.criminal { border-top-color: var(--criminal); }
+    .vc-bottom.civil    { border-top-color: var(--civil); }
+
+    .mini-stamp {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2.5px solid;
+      border-radius: 50%;
+      width: 58px;
+      height: 58px;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.3px;
+      transform: rotate(-12deg);
+      text-align: center;
+      line-height: 1.3;
+      padding: 4px;
+      flex-shrink: 0;
+    }
+    .mini-stamp.guilty       { border-color: var(--guilty);     color: var(--guilty); }
+    .mini-stamp.notguilty    { border-color: var(--notguilty);  color: var(--notguilty); }
+    .mini-stamp.dismissed    { border-color: var(--dismissed);  color: var(--dismissed); }
+    .mini-stamp.civil-win    { border-color: var(--civil-win);  color: var(--civil-win); }
+    .mini-stamp.civil-loss   { border-color: var(--civil-loss); color: var(--civil-loss); }
+    .mini-stamp.settlement   { border-color: var(--settlement); color: var(--settlement); }
+
+    .vc-info { flex: 1; min-width: 0; }
+    .vc-punishment { font-size: 12px; font-weight: 700; color: var(--navy); margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .vc-reason-preview { font-size: 11px; color: #888; line-height: 1.5; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+
+    .vc-vote-bar { margin-top: 8px; }
+    .vc-vote-bar-track { height: 4px; background: #e8e8e8; border-radius: 2px; overflow: hidden; display: flex; margin-bottom: 3px; }
+    .vc-vote-bar-yes { transition: width 0.5s; }
+    .vc-vote-bar-no  { transition: width 0.5s; }
+    .guilty-bar    .vc-vote-bar-yes { background: var(--guilty);    }
+    .guilty-bar    .vc-vote-bar-no  { background: var(--notguilty); }
+    .civil-bar     .vc-vote-bar-yes { background: var(--civil-win); }
+    .civil-bar     .vc-vote-bar-no  { background: var(--civil-loss);}
+    .vc-vote-text { font-size: 10px; color: #bbb; }
+    .vc-date { font-size: 10px; color: #bbb; margin-top: 4px; }
+
+    /* ─── 상세 모달 ─── */
+    .verdict-detail-modal {
+      background: var(--cream);
+      border: 1px solid var(--ivory-dark);
+      border-radius: 10px;
+      width: 100%;
+      max-width: 680px;
+      max-height: 92vh;
+      overflow-y: auto;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.45);
+      animation: modalIn 0.2s ease;
+    }
+
+    .vm-hero {
+      padding: 30px 28px 24px;
+      position: relative;
+      overflow: hidden;
+    }
+    .vm-hero.criminal { background: linear-gradient(150deg, #200808, #4a1010, #7a2020); }
+    .vm-hero.civil    { background: linear-gradient(150deg, #081020, #0f2050, #1a4a8a); }
+    .vm-hero::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse at 60% 40%, rgba(201,168,76,0.1), transparent 70%); }
+
+    .vm-case-num { font-size: 11px; color: rgba(245,240,232,0.5); letter-spacing: 3px; margin-bottom: 5px; position: relative; }
+    .vm-title { font-size: 22px; font-weight: 800; color: var(--gold-light); margin-bottom: 14px; line-height: 1.35; position: relative; }
+
+    .vm-parties { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 14px; position: relative; }
+    .vm-party { background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.14); border-radius: 6px; padding: 7px 14px; text-align: center; }
+    .vm-party-label { font-size: 10px; letter-spacing: 2px; color: rgba(245,240,232,0.55); margin-bottom: 3px; }
+    .vm-party-name  { font-size: 14px; font-weight: 700; color: var(--ivory); }
+    .vm-vs { color: var(--gold); font-weight: 700; }
+
+    .vm-desc { font-size: 13px; color: rgba(245,240,232,0.7); line-height: 1.7; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.08); position: relative; }
+
+    .vm-stamp-row { display: flex; align-items: center; gap: 20px; margin-top: 20px; position: relative; }
+    .vm-large-stamp {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 3px solid;
+      border-radius: 50%;
+      width: 84px;
+      height: 84px;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.3px;
+      transform: rotate(-15deg);
+      text-align: center;
+      line-height: 1.3;
+      padding: 6px;
+      flex-shrink: 0;
+    }
+    .vm-large-stamp.guilty     { border-color: #ff6b6b; color: #ff6b6b; }
+    .vm-large-stamp.notguilty  { border-color: #69db7c; color: #69db7c; }
+    .vm-large-stamp.dismissed  { border-color: #aaaacc; color: #aaaacc; }
+    .vm-large-stamp.civil-win  { border-color: #7aa8ff; color: #7aa8ff; }
+    .vm-large-stamp.civil-loss { border-color: #ffaa44; color: #ffaa44; }
+    .vm-large-stamp.settlement { border-color: #44ddbb; color: #44ddbb; }
+
+    .vm-verdict-info { flex: 1; }
+    .vm-verdict-sublabel { font-size: 10px; color: var(--gold); letter-spacing: 3px; margin-bottom: 4px; }
+    .vm-verdict-name { font-size: 26px; font-weight: 800; line-height: 1.2; margin-bottom: 6px; }
+    .vm-verdict-name.guilty     { color: #ff6b6b; }
+    .vm-verdict-name.notguilty  { color: #69db7c; }
+    .vm-verdict-name.dismissed  { color: #aaaacc; }
+    .vm-verdict-name.civil-win  { color: #7aa8ff; }
+    .vm-verdict-name.civil-loss { color: #ffaa44; }
+    .vm-verdict-name.settlement { color: #44ddbb; }
+    .vm-punishment-text { font-size: 14px; color: var(--gold-light); font-weight: 600; }
+
+    .vm-body { padding: 24px 28px; }
+    .vm-section { margin-bottom: 24px; }
+    .vm-section-title {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 3px;
+      color: var(--gold-dark);
+      border-bottom: 1px solid var(--ivory-dark);
+      padding-bottom: 8px;
+      margin-bottom: 14px;
+    }
+    .vm-reason-box {
+      font-size: 14px;
+      line-height: 1.8;
+      color: var(--text-dark);
+      background: var(--ivory);
+      border: 1px solid var(--ivory-dark);
+      border-left: 3px solid var(--gold-dark);
+      border-radius: 4px;
+      padding: 16px 18px;
+      white-space: pre-wrap;
+    }
+
+    .vm-vote-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+    .vm-vote-box { text-align: center; padding: 14px; border-radius: 6px; }
+    .vm-vote-box.yes-criminal { background: #fce8e8; border: 1px solid #f0b8b8; }
+    .vm-vote-box.no-criminal  { background: #e8f5ec; border: 1px solid #b8dfc4; }
+    .vm-vote-box.yes-civil    { background: #e8eeff; border: 1px solid #b8ccee; }
+    .vm-vote-box.no-civil     { background: #fff3e8; border: 1px solid #eeccaa; }
+    .vm-vote-label { font-size: 11px; font-weight: 700; letter-spacing: 1px; margin-bottom: 4px; }
+    .yes-criminal .vm-vote-label { color: var(--guilty);    }
+    .no-criminal  .vm-vote-label { color: var(--notguilty); }
+    .yes-civil    .vm-vote-label { color: var(--civil-win); }
+    .no-civil     .vm-vote-label { color: var(--civil-loss);}
+    .vm-vote-num { font-size: 34px; font-weight: 800; }
+    .yes-criminal .vm-vote-num { color: var(--guilty);    }
+    .no-criminal  .vm-vote-num { color: var(--notguilty); }
+    .yes-civil    .vm-vote-num { color: var(--civil-win); }
+    .no-civil     .vm-vote-num { color: var(--civil-loss);}
+
+    .vm-vote-bar-wrap { margin-bottom: 10px; }
+    .vm-vote-bar-track { height: 8px; background: #e8e8e8; border-radius: 4px; overflow: hidden; display: flex; }
+    .vm-vbar-yes { transition: width 0.5s; }
+    .vm-vbar-no  { transition: width 0.5s; }
+    .criminal-vbar .vm-vbar-yes { background: var(--guilty);    }
+    .criminal-vbar .vm-vbar-no  { background: var(--notguilty); }
+    .civil-vbar    .vm-vbar-yes { background: var(--civil-win); }
+    .civil-vbar    .vm-vbar-no  { background: var(--civil-loss);}
+
+    .vm-voter-list { display: flex; gap: 6px; flex-wrap: wrap; }
+    .vm-voter-chip { font-size: 11px; padding: 3px 10px; border-radius: 20px; border: 1px solid; }
+    .vm-voter-chip.yes-criminal { background: #fce8e8; border-color: #f0b8b8; color: var(--guilty);    }
+    .vm-voter-chip.no-criminal  { background: #e8f5ec; border-color: #b8dfc4; color: var(--notguilty); }
+    .vm-voter-chip.yes-civil    { background: #e8eeff; border-color: #b8ccee; color: var(--civil-win); }
+    .vm-voter-chip.no-civil     { background: #fff3e8; border-color: #eeccaa; color: var(--civil-loss);}
+
+    .vm-footer {
+      padding: 16px 28px;
+      border-top: 1px solid var(--ivory-dark);
+      background: var(--ivory);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+    .vm-footer-date { font-size: 12px; color: #999; }
+  </style>
+</head>
+<body>
+
+<header class="court-header">
+  <div class="court-emblem">⚖️</div>
+  <div class="court-title">디스코드 모의법원</div>
+  <div class="court-subtitle">DISCORD MOCK COURT OF JUSTICE</div>
+  <div class="header-divider"><span></span><i>✦</i><span></span></div>
+</header>
+
+<nav class="court-nav">
+  <a href="index.html">🏛️ 사건 목록</a>
+  <a href="verdicts.html" class="active">📜 판결 아카이브</a>
+</nav>
+
+<div class="container">
+
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px;padding-bottom:12px;border-bottom:2px solid var(--gold-dark);">
+    <span style="font-size:22px;">📜</span>
+    <h2 style="font-size:20px;font-weight:700;color:var(--navy);letter-spacing:2px;">판결 아카이브</h2>
+    <div style="flex:1;height:1px;background:linear-gradient(90deg,var(--gold-dark),transparent);margin-left:8px;"></div>
+  </div>
+
+  <!-- 통계 -->
+  <div class="archive-stats" id="statsRow">
+    <div class="stat-card">
+      <div class="stat-num" id="statTotal">—</div>
+      <div class="stat-label">총 판결</div>
+    </div>
+    <div class="stat-card criminal">
+      <div class="stat-num criminal" id="statGuilty">—</div>
+      <div class="stat-label">유죄</div>
+    </div>
+    <div class="stat-card notguilty">
+      <div class="stat-num notguilty" id="statNotGuilty">—</div>
+      <div class="stat-label">무죄</div>
+    </div>
+    <div class="stat-card civil">
+      <div class="stat-num civil" id="statCivil">—</div>
+      <div class="stat-label">민사 종결</div>
+    </div>
+  </div>
+
+  <!-- 검색 -->
+  <div class="search-bar">
+    <span class="search-icon">🔍</span>
+    <input type="text" id="searchInput" placeholder="사건명, 당사자 이름으로 검색..." oninput="applyFilters()">
+  </div>
+
+  <!-- 필터 탭 -->
+  <div class="filter-tabs" style="margin-bottom:24px;">
+    <button class="filter-tab active" data-filter="all" onclick="setFilter('all',this)">전체</button>
+    <button class="filter-tab criminal" data-filter="형사" onclick="setFilter('형사',this)">⚡ 형사</button>
+    <button class="filter-tab civil" data-filter="민사" onclick="setFilter('민사',this)">📜 민사</button>
+    <button class="filter-tab" data-filter="유죄" onclick="setFilter('유죄',this)">유죄</button>
+    <button class="filter-tab" data-filter="무죄" onclick="setFilter('무죄',this)">무죄</button>
+    <button class="filter-tab" data-filter="dismissed" onclick="setFilter('dismissed',this)">기각/취하</button>
+  </div>
+
+  <div id="verdictsList" class="verdicts-grid">
+    <div class="empty-state" style="grid-column:1/-1">
+      <div class="empty-icon">⏳</div>
+      <p>판결 목록을 불러오는 중...</p>
+    </div>
+  </div>
+
+</div>
+
+<!-- 상세 모달 -->
+<div id="detailModal" class="modal-overlay">
+  <div class="verdict-detail-modal" id="detailBox">
+    <div id="detailContent"></div>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+let allVerdicts = [];
+let currentFilter = 'all';
+
+const VERDICT_CLASS = {
+  '유죄': 'guilty', '무죄': 'notguilty',
+  '공소기각': 'dismissed', '면소': 'dismissed', '합의취하': 'dismissed', '고소취하(공소기각)': 'dismissed',
+  '청구인용': 'civil-win', '일부인용': 'civil-win',
+  '청구기각': 'civil-loss',
+  '조정성립': 'settlement', '소취하': 'dismissed',
+};
+
+const STAMP_TEXT = {
+  '유죄': '유죄', '무죄': '무죄',
+  '공소기각': '공소\n기각', '면소': '면소', '합의취하': '취하', '고소취하(공소기각)': '공소\n기각',
+  '청구인용': '인용', '일부인용': '일부\n인용',
+  '청구기각': '기각',
+  '조정성립': '조정\n성립', '소취하': '취하',
+};
+
+const DISMISSED_VERDICTS = new Set(['공소기각','면소','합의취하','고소취하(공소기각)','청구기각','소취하']);
+
+function caseNumber(c) {
+  const year = new Date(c.created_at).getFullYear();
+  const seq = c.id.slice(0, 4).toUpperCase();
+  const type = c.case_type === '형사' ? '형단' : '민단';
+  return `${year} 디코${type} ${seq}호`;
+}
+
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+async function load() {
+  try {
+    const res = await fetch('/api/verdicts');
+    allVerdicts = await res.json();
+    updateStats();
+    applyFilters();
+  } catch(e) {
+    document.getElementById('verdictsList').innerHTML = `
+      <div class="empty-state" style="grid-column:1/-1">
+        <div class="empty-icon">⚠️</div>
+        <p>데이터를 불러오지 못했습니다</p>
+      </div>`;
+  }
+}
+
+function updateStats() {
+  document.getElementById('statTotal').textContent = allVerdicts.length;
+  document.getElementById('statGuilty').textContent = allVerdicts.filter(v => v.verdict === '유죄').length;
+  document.getElementById('statNotGuilty').textContent = allVerdicts.filter(v => v.verdict === '무죄').length;
+  document.getElementById('statCivil').textContent = allVerdicts.filter(v => v.case_type === '민사').length;
+}
+
+function setFilter(f, el) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  applyFilters();
+}
+
+function applyFilters() {
+  const q = document.getElementById('searchInput').value.trim().toLowerCase();
+  let list = allVerdicts;
+
+  if (currentFilter === '형사') list = list.filter(v => v.case_type === '형사');
+  else if (currentFilter === '민사') list = list.filter(v => v.case_type === '민사');
+  else if (currentFilter === '유죄') list = list.filter(v => v.verdict === '유죄');
+  else if (currentFilter === '무죄') list = list.filter(v => v.verdict === '무죄');
+  else if (currentFilter === 'dismissed') list = list.filter(v => DISMISSED_VERDICTS.has(v.verdict));
+
+  if (q) {
+    list = list.filter(v =>
+      v.title.toLowerCase().includes(q) ||
+      v.plaintiff.toLowerCase().includes(q) ||
+      v.defendant.toLowerCase().includes(q)
+    );
+  }
+
+  render(list);
+}
+
+function render(list) {
+  const el = document.getElementById('verdictsList');
+  if (!list.length) {
+    el.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
+      <div class="empty-icon">📭</div>
+      <p>해당하는 판결이 없습니다</p>
+    </div>`;
+    return;
+  }
+
+  el.innerHTML = list.map(v => {
+    const cls = v.case_type === '형사' ? 'criminal' : 'civil';
+    const vClass = VERDICT_CLASS[v.verdict] || 'dismissed';
+    const stampTxt = (STAMP_TEXT[v.verdict] || v.verdict).replace(/\n/g,'<br>');
+    const num = caseNumber(v);
+    const date = new Date(v.created_at).toLocaleDateString('ko-KR');
+    const total = v.vote_total || 0;
+    const yesW = total > 0 ? Math.round((v.vote_yes / total) * 100) : 0;
+    const noW  = total > 0 ? Math.round((v.vote_no  / total) * 100) : 0;
+    const isCivil = v.case_type === '민사';
+    const yesLabel = isCivil ? '원고승' : '유죄';
+    const noLabel  = isCivil ? '피고승' : '무죄';
+
+    return `<div class="verdict-card" onclick="openDetail('${esc(v.id)}')">
+      <div class="vc-hero ${cls}">
+        <div class="vc-case-num">${esc(num)}</div>
+        <div class="vc-title">${esc(v.title)}</div>
+        <div class="vc-parties">
+          <span>${esc(v.plaintiff)}</span>
+          <span class="vc-vs">VS</span>
+          <span>${esc(v.defendant)}</span>
+        </div>
+      </div>
+      <div class="vc-bottom ${cls}">
+        <div class="mini-stamp ${vClass}">${stampTxt}</div>
+        <div class="vc-info">
+          ${v.punishment ? `<div class="vc-punishment">⚖ ${esc(v.punishment)}</div>` : ''}
+          <div class="vc-reason-preview">${esc(v.verdict_reason || '')}</div>
+          ${total > 0 ? `
+          <div class="vc-vote-bar ${isCivil ? 'civil-bar' : 'guilty-bar'}">
+            <div class="vc-vote-bar-track">
+              <div class="vc-vote-bar-yes" style="width:${yesW}%"></div>
+              <div class="vc-vote-bar-no"  style="width:${noW}%"></div>
+            </div>
+            <div class="vc-vote-text">${yesLabel} ${v.vote_yes} · ${noLabel} ${v.vote_no} · 총 ${total}표</div>
+          </div>` : ''}
+          <div class="vc-date">📅 ${date}</div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function openDetail(id) {
+  document.getElementById('detailContent').innerHTML = `
+    <div style="padding:48px;text-align:center;color:#aaa;">
+      <div style="font-size:32px;margin-bottom:12px;">⏳</div>
+      <div>불러오는 중...</div>
+    </div>`;
+  document.getElementById('detailModal').classList.add('active');
+
+  try {
+    const res = await fetch(`/api/cases/${id}`);
+    const c = await res.json();
+    renderDetail(c);
+  } catch(e) {
+    document.getElementById('detailContent').innerHTML = `<div style="padding:32px;text-align:center;color:#e05555;">불러오기 실패</div>`;
+  }
+}
+
+function renderDetail(c) {
+  const cls = c.case_type === '형사' ? 'criminal' : 'civil';
+  const vClass = VERDICT_CLASS[c.verdict] || 'dismissed';
+  const stampTxt = (STAMP_TEXT[c.verdict] || c.verdict).replace(/\n/g,'<br>');
+  const num = caseNumber(c);
+  const isCivil = c.case_type === '민사';
+  const plaintiffLabel = isCivil ? '원고' : '고소인/검사';
+  const defendantLabel = isCivil ? '피고' : '피고인';
+  const yesVote = isCivil ? '원고승' : '유죄';
+  const noVote  = isCivil ? '피고승' : '무죄';
+
+  const votes = c.votes || [];
+  const yesVoters = votes.filter(v => v.vote === yesVote);
+  const noVoters  = votes.filter(v => v.vote === noVote);
+  const total = votes.length;
+  const yesW = total > 0 ? Math.round((yesVoters.length / total) * 100) : 0;
+  const noW  = total > 0 ? Math.round((noVoters.length  / total) * 100) : 0;
+
+  const date = new Date(c.created_at).toLocaleDateString('ko-KR', { year:'numeric', month:'long', day:'numeric' });
+
+  document.getElementById('detailContent').innerHTML = `
+    <div class="vm-hero ${cls}">
+      <div class="vm-case-num">${esc(num)}</div>
+      <div class="vm-title">${esc(c.title)}</div>
+      <div class="vm-parties">
+        <div class="vm-party">
+          <div class="vm-party-label">${plaintiffLabel}</div>
+          <div class="vm-party-name">${esc(c.plaintiff)}</div>
+        </div>
+        <div class="vm-vs">VS</div>
+        <div class="vm-party">
+          <div class="vm-party-label">${defendantLabel}</div>
+          <div class="vm-party-name">${esc(c.defendant)}</div>
+        </div>
+      </div>
+      <div class="vm-desc">${esc(c.description)}</div>
+      <div class="vm-stamp-row">
+        <div class="vm-large-stamp ${vClass}">${stampTxt}</div>
+        <div class="vm-verdict-info">
+          <div class="vm-verdict-sublabel">주 문</div>
+          <div class="vm-verdict-name ${vClass}">${esc(c.verdict)}</div>
+          ${c.punishment ? `<div class="vm-punishment-text">${esc(c.punishment)}</div>` : ''}
+        </div>
+      </div>
+    </div>
+
+    <div class="vm-body">
+      <div class="vm-section">
+        <div class="vm-section-title">이 유</div>
+        <div class="vm-reason-box">${esc(c.verdict_reason || '판결 이유가 기록되지 않았습니다.')}</div>
+      </div>
+
+      ${total > 0 ? `
+      <div class="vm-section">
+        <div class="vm-section-title">배심원 평결 (총 ${total}표)</div>
+        <div class="vm-vote-grid">
+          <div class="vm-vote-box yes-${cls}">
+            <div class="vm-vote-label">${yesVote}</div>
+            <div class="vm-vote-num">${yesVoters.length}</div>
+          </div>
+          <div class="vm-vote-box no-${cls}">
+            <div class="vm-vote-label">${noVote}</div>
+            <div class="vm-vote-num">${noVoters.length}</div>
+          </div>
+        </div>
+        <div class="vm-vote-bar-wrap">
+          <div class="vm-vote-bar-track ${cls}-vbar">
+            <div class="vm-vbar-yes" style="width:${yesW}%"></div>
+            <div class="vm-vbar-no"  style="width:${noW}%"></div>
+          </div>
+        </div>
+        ${yesVoters.length > 0 ? `
+        <div style="margin-bottom:8px;">
+          <div style="font-size:11px;color:#888;margin-bottom:5px;letter-spacing:1px;">${yesVote} 투표</div>
+          <div class="vm-voter-list">${yesVoters.map(v => `<span class="vm-voter-chip yes-${cls}">${esc(v.voter)}</span>`).join('')}</div>
+        </div>` : ''}
+        ${noVoters.length > 0 ? `
+        <div>
+          <div style="font-size:11px;color:#888;margin-bottom:5px;letter-spacing:1px;">${noVote} 투표</div>
+          <div class="vm-voter-list">${noVoters.map(v => `<span class="vm-voter-chip no-${cls}">${esc(v.voter)}</span>`).join('')}</div>
+        </div>` : ''}
+      </div>
+      ` : `
+      <div class="vm-section">
+        <div class="vm-section-title">배심원 평결</div>
+        <div style="color:#aaa;font-size:13px;padding:12px 0;">배심원 투표 기록이 없습니다.</div>
+      </div>`}
+    </div>
+
+    <div class="vm-footer">
+      <span class="vm-footer-date">📅 판결 일자: ${date}</span>
+      <div style="display:flex;gap:10px;">
+        <a href="trial.html?id=${esc(c.id)}" class="btn btn-outline btn-sm">📋 재판 기록 보기</a>
+        <button class="btn btn-primary btn-sm" onclick="closeDetail()">닫기</button>
+      </div>
+    </div>
+  `;
+}
+
+function closeDetail() {
+  document.getElementById('detailModal').classList.remove('active');
+}
+
+document.getElementById('detailModal').addEventListener('click', function(e) {
+  if (e.target === this) closeDetail();
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeDetail();
+});
+
+function toast(msg, type = '') {
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.textContent = msg;
+  document.getElementById('toastContainer').appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+
+load();
+</script>
+</body>
+</html>

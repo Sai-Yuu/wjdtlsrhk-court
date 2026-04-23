@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>로딩 중...</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@400;700;800&display=swap');
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: linear-gradient(160deg, #0f1a33 0%, #1a2744 60%, #243460 100%);
+      color: #f5f0e8;
+      font-family: 'Nanum Myeongjo', serif;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 20px;
+      user-select: none;
+    }
+    .emblem {
+      font-size: 64px;
+      animation: pulse 1.8s ease-in-out infinite;
+      filter: drop-shadow(0 0 20px rgba(201,168,76,0.5));
+    }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.08); opacity: 0.85; }
+    }
+    .title {
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: 6px;
+      color: #e8c97a;
+      text-shadow: 0 2px 12px rgba(0,0,0,0.4);
+    }
+    .subtitle {
+      font-size: 12px;
+      letter-spacing: 3px;
+      color: rgba(245,240,232,0.5);
+    }
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 4px;
+    }
+    .divider span {
+      height: 1px;
+      width: 60px;
+      background: linear-gradient(90deg, transparent, #c9a84c, transparent);
+      display: block;
+    }
+    .divider i { color: #c9a84c; font-size: 12px; font-style: normal; }
+    .loading-text {
+      font-size: 13px;
+      color: rgba(245,240,232,0.45);
+      letter-spacing: 2px;
+      margin-top: 8px;
+      animation: blink 1.2s ease-in-out infinite;
+    }
+    @keyframes blink {
+      0%, 100% { opacity: 0.45; }
+      50% { opacity: 0.9; }
+    }
+    .dots::after {
+      content: '';
+      animation: dots 1.5s steps(4, end) infinite;
+    }
+    @keyframes dots {
+      0%   { content: ''; }
+      25%  { content: '.'; }
+      50%  { content: '..'; }
+      75%  { content: '...'; }
+    }
+  </style>
+</head>
+<body>
+  <div class="emblem">⚖️</div>
+  <div class="title">디스코드 모의법원</div>
+  <div class="subtitle">DISCORD MOCK COURT OF JUSTICE</div>
+  <div class="divider"><span></span><i>✦</i><span></span></div>
+  <div class="loading-text">서버 시작 중<span class="dots"></span></div>
+</body>
+</html>

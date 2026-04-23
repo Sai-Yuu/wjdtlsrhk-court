@@ -12,28 +12,31 @@
   <div class="court-emblem">⚖️</div>
   <div class="court-title">디스코드 모의법원</div>
   <div class="court-subtitle">DISCORD MOCK COURT OF JUSTICE</div>
-  <div class="header-divider">
-    <span></span>
-    <i>✦</i>
-    <span></span>
-  </div>
+  <div class="header-divider"><span></span><i>✦</i><span></span></div>
 </header>
 
 <nav class="court-nav">
   <a href="index.html" class="active">🏛️ 사건 목록</a>
+  <a href="verdicts.html">📜 판결 아카이브</a>
 </nav>
 
 <div class="container">
 
-  <div class="section-title" style="justify-content:space-between;align-items:center;display:flex;flex-wrap:wrap;gap:12px;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:20px;">
     <div style="display:flex;align-items:center;gap:12px;">
-      <span class="title-icon">📋</span>
-      <h2>접수된 사건 목록</h2>
-      <div class="line" style="width:80px;"></div>
+      <span style="font-size:22px;">📋</span>
+      <h2 style="font-size:20px;font-weight:700;color:var(--navy);letter-spacing:2px;">접수된 사건 목록</h2>
     </div>
-    <button class="btn btn-primary" onclick="openNewCaseModal()">
-      ＋ 새 사건 접수
-    </button>
+    <button class="btn btn-primary" onclick="openNewCaseModal()">＋ 새 사건 접수</button>
+  </div>
+
+  <!-- 필터 탭 -->
+  <div class="filter-tabs">
+    <button class="filter-tab active" data-filter="all" onclick="setFilter('all', this)">전체</button>
+    <button class="filter-tab criminal" data-filter="형사" onclick="setFilter('형사', this)">⚡ 형사</button>
+    <button class="filter-tab civil" data-filter="민사" onclick="setFilter('민사', this)">📜 민사</button>
+    <button class="filter-tab" data-filter="in_progress" onclick="setFilter('in_progress', this)">⚖️ 진행 중</button>
+    <button class="filter-tab" data-filter="closed" onclick="setFilter('closed', this)">🔨 종결</button>
   </div>
 
   <div id="casesList" class="cases-grid">
@@ -47,33 +50,49 @@
 
 <!-- 새 사건 접수 모달 -->
 <div id="newCaseModal" class="modal-overlay">
-  <div class="modal">
-    <div class="modal-header">
-      <h3>📜 새 사건 접수</h3>
+  <div class="modal" id="newCaseModalBox">
+    <div class="modal-header" id="newCaseModalHeader">
+      <h3 id="newCaseModalTitle">📜 새 사건 접수</h3>
       <button class="modal-close" onclick="closeNewCaseModal()">✕</button>
     </div>
     <div class="modal-body">
+
+      <!-- 사건 유형 선택 -->
+      <div style="margin-bottom:20px;">
+        <div style="font-size:13px;font-weight:700;color:var(--navy);letter-spacing:1px;margin-bottom:8px;">사건 유형 <span style="color:var(--gold-dark)">*</span></div>
+        <div class="case-type-toggle">
+          <button class="case-type-btn criminal active" id="btnCriminal" onclick="setCaseType('형사')">⚡ 형사</button>
+          <button class="case-type-btn civil" id="btnCivil" onclick="setCaseType('민사')">📜 민사</button>
+        </div>
+        <div id="caseTypeDesc" style="font-size:12px;color:#888;padding:8px 12px;background:var(--ivory);border-radius:4px;line-height:1.6;">
+          형사 사건 — 피고인의 범죄 행위에 대한 처벌을 구하는 사건
+        </div>
+      </div>
+
       <div class="form-group">
         <label>사건명 <span class="required">*</span></label>
-        <input type="text" id="caseTitle" placeholder="예: 롤 팀킬 사건, 채팅방 스포일러 테러 사건">
+        <input type="text" id="caseTitle" placeholder="예: 롤 팀킬 사건, 스포일러 테러 사건">
       </div>
+
       <div class="form-row">
         <div class="form-group">
-          <label>원고 (고소인) <span class="required">*</span></label>
+          <label id="plaintiffLabel">고소인 / 검사 <span class="required">*</span></label>
           <input type="text" id="casePlaintiff" placeholder="닉네임 입력">
         </div>
         <div class="form-group">
-          <label>피고 (피소인) <span class="required">*</span></label>
+          <label id="defendantLabel">피고인 <span class="required">*</span></label>
           <input type="text" id="caseDefendant" placeholder="닉네임 입력">
         </div>
       </div>
+
       <div class="form-group">
         <label>사건 개요 <span class="required">*</span></label>
         <textarea id="caseDescription" placeholder="무슨 일이 있었는지 자세히 작성해주세요..."></textarea>
       </div>
+
       <div class="form-actions">
         <button class="btn btn-outline" onclick="closeNewCaseModal()">취소</button>
-        <button class="btn btn-primary" onclick="submitNewCase()">📜 사건 접수</button>
+        <button class="btn btn-primary" id="submitCaseBtn" onclick="submitNewCase()">📜 사건 접수</button>
       </div>
     </div>
   </div>
@@ -84,52 +103,116 @@
 <script src="/socket.io/socket.io.js"></script>
 <script>
 const socket = io();
+let allCases = [];
+let currentFilter = 'all';
+let selectedCaseType = '형사';
+
+// 사건번호 생성
+function caseNumber(c) {
+  const year = new Date(c.created_at).getFullYear();
+  const seq = c.id.slice(0, 4).toUpperCase();
+  const type = c.case_type === '형사' ? '형단' : '민단';
+  return `${year} 디코${type} ${seq}호`;
+}
+
+// 판결 배지
+const VERDICT_BADGE = {
+  '유죄': 'badge-guilty', '무죄': 'badge-notguilty',
+  '공소기각': 'badge-dismissed', '면소': 'badge-dismissed', '합의취하': 'badge-dismissed',
+  '청구인용': 'badge-civil-win', '일부인용': 'badge-civil-win',
+  '청구기각': 'badge-civil-loss',
+  '조정성립': 'badge-settlement', '소취하': 'badge-dismissed',
+};
+const VERDICT_LABEL = {
+  '유죄': '유죄', '무죄': '무죄',
+  '공소기각': '공소기각', '면소': '면소', '합의취하': '합의취하',
+  '청구인용': '청구인용', '일부인용': '일부인용',
+  '청구기각': '청구기각',
+  '조정성립': '조정성립', '소취하': '소취하',
+};
 
 async function loadCases() {
   const res = await fetch('/api/cases');
-  const cases = await res.json();
-  renderCases(cases);
+  allCases = await res.json();
+  renderCases(allCases);
+}
+
+function setFilter(filter, el) {
+  currentFilter = filter;
+  document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  renderCases(allCases);
 }
 
 function renderCases(cases) {
+  let filtered = cases;
+  if (currentFilter === '형사') filtered = cases.filter(c => c.case_type === '형사');
+  else if (currentFilter === '민사') filtered = cases.filter(c => c.case_type === '민사');
+  else if (currentFilter === 'in_progress') filtered = cases.filter(c => c.status === 'in_progress');
+  else if (currentFilter === 'closed') filtered = cases.filter(c => c.status === 'closed');
+
   const el = document.getElementById('casesList');
-  if (!cases.length) {
+  if (!filtered.length) {
     el.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
       <div class="empty-icon">⚖️</div>
-      <p>접수된 사건이 없습니다<br><small style="color:#bbb;font-size:12px;margin-top:8px;display:block">새 사건 접수 버튼으로 시작하세요</small></p>
+      <p>해당하는 사건이 없습니다<br><small style="color:#bbb;font-size:12px;margin-top:8px;display:block">새 사건 접수 버튼으로 시작하세요</small></p>
     </div>`;
     return;
   }
-  el.innerHTML = cases.map(c => {
-    const statusLabel = c.status === 'in_progress' ? '⚖️ 재판 진행 중' : '🔨 종결';
-    const badgeClass = c.status === 'closed'
-      ? (c.verdict === '유죄' ? 'badge-closed-guilty' : c.verdict === '무죄' ? 'badge-closed-notguilty' : 'badge-closed')
-      : 'badge-in_progress';
+
+  el.innerHTML = filtered.map(c => {
+    const type = c.case_type || '형사';
+    const num = caseNumber(c);
     const date = new Date(c.created_at).toLocaleDateString('ko-KR');
-    const caseNum = `사건 ${c.id.slice(0,8).toUpperCase()}`;
-    return `
-      <a class="case-card" href="trial.html?id=${c.id}">
-        <div class="case-card-header">
-          <span class="case-number">${caseNum}</span>
-          <span class="badge ${badgeClass}">${c.verdict ? c.verdict : statusLabel}</span>
-        </div>
-        <div class="case-title">${escHtml(c.title)}</div>
-        <div class="case-parties">
-          <span>${escHtml(c.plaintiff)}</span>
-          <span class="vs">VS</span>
-          <span>${escHtml(c.defendant)}</span>
-        </div>
-        <div class="case-desc">${escHtml(c.description)}</div>
-        <div class="case-meta">
-          <span>📅 ${date}</span>
-          ${c.verdict ? `<span>🔨 판결: ${escHtml(c.verdict)}</span>` : ''}
-        </div>
-      </a>`;
+    const typeBadge = type === '형사'
+      ? `<span class="badge badge-type-criminal">⚡ 형사</span>`
+      : `<span class="badge badge-type-civil">📜 민사</span>`;
+    const statusBadge = c.status === 'closed'
+      ? `<span class="badge ${VERDICT_BADGE[c.verdict] || 'badge-closed'}">🔨 ${VERDICT_LABEL[c.verdict] || c.verdict}</span>`
+      : `<span class="badge badge-in_progress">⚖️ 진행 중</span>`;
+    const plaintiff_label = type === '형사' ? '검사/고소인' : '원고';
+    const defendant_label = type === '형사' ? '피고인' : '피고';
+
+    return `<a class="case-card ${type === '형사' ? 'criminal' : 'civil'}" href="trial.html?id=${c.id}">
+      <div class="case-card-header">
+        <span class="case-number ${type === '형사' ? 'criminal' : 'civil'}">${num}</span>
+        <div style="display:flex;gap:4px;flex-wrap:wrap;">${typeBadge}${statusBadge}</div>
+      </div>
+      <div class="case-title">${escHtml(c.title)}</div>
+      <div class="case-parties">
+        <span title="${plaintiff_label}">${escHtml(c.plaintiff)}</span>
+        <span class="vs ${type === '형사' ? 'criminal' : 'civil'}">VS</span>
+        <span title="${defendant_label}">${escHtml(c.defendant)}</span>
+      </div>
+      <div class="case-desc">${escHtml(c.description)}</div>
+      <div class="case-meta">
+        <span>📅 ${date}</span>
+        ${c.verdict ? `<span>🔨 ${escHtml(c.verdict)}${c.punishment ? ' · ' + escHtml(c.punishment) : ''}</span>` : ''}
+      </div>
+    </a>`;
   }).join('');
+}
+
+// 사건 유형 전환
+function setCaseType(type) {
+  selectedCaseType = type;
+  const isCriminal = type === '형사';
+  document.getElementById('btnCriminal').classList.toggle('active', isCriminal);
+  document.getElementById('btnCivil').classList.toggle('active', !isCriminal);
+  document.getElementById('newCaseModalBox').className = `modal ${isCriminal ? 'criminal' : 'civil'}`;
+  document.getElementById('newCaseModalHeader').className = `modal-header ${isCriminal ? 'criminal' : 'civil'}`;
+  document.getElementById('newCaseModalTitle').textContent = isCriminal ? '⚡ 형사 사건 접수' : '📜 민사 사건 접수';
+  document.getElementById('plaintiffLabel').innerHTML = (isCriminal ? '고소인 / 검사' : '원고') + ' <span class="required">*</span>';
+  document.getElementById('defendantLabel').innerHTML = (isCriminal ? '피고인' : '피고') + ' <span class="required">*</span>';
+  document.getElementById('caseTypeDesc').textContent = isCriminal
+    ? '형사 사건 — 피고인의 범죄 행위에 대한 처벌을 구하는 사건'
+    : '민사 사건 — 당사자 간의 권리·의무 관계를 다루는 사건';
+  document.getElementById('submitCaseBtn').className = `btn ${isCriminal ? 'btn-danger' : 'btn-primary'}`;
 }
 
 function openNewCaseModal() {
   document.getElementById('newCaseModal').classList.add('active');
+  setCaseType(selectedCaseType);
   document.getElementById('caseTitle').focus();
 }
 function closeNewCaseModal() {
@@ -150,7 +233,7 @@ async function submitNewCase() {
   const res = await fetch('/api/cases', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ title, plaintiff, defendant, description })
+    body: JSON.stringify({ title, plaintiff, defendant, description, case_type: selectedCaseType })
   });
   const data = await res.json();
   if (data.error) { toast(data.error, 'error'); return; }
@@ -159,17 +242,15 @@ async function submitNewCase() {
   loadCases();
 }
 
-socket.on('case_created', () => loadCases());
-
-// 오버레이 클릭으로 닫기
 document.getElementById('newCaseModal').addEventListener('click', function(e) {
   if (e.target === this) closeNewCaseModal();
 });
 
+socket.on('case_created', () => loadCases());
+
 function escHtml(str) {
   return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
-
 function toast(msg, type = '') {
   const el = document.createElement('div');
   el.className = `toast ${type}`;
