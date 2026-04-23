@@ -252,6 +252,7 @@ const VERDICTS = {
 
 // ── 사건 번호 생성 ───────────────────────────────────────────
 function caseNumber(c) {
+  if (c.case_number) return c.case_number;
   const year = new Date(c.created_at).getFullYear();
   const seq = c.id.slice(0, 4).toUpperCase();
   const type = (c.case_type || '형사') === '형사' ? '형단' : '민단';

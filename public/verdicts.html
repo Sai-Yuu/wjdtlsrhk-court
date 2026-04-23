@@ -360,6 +360,7 @@ const STAMP_TEXT = {
 const DISMISSED_VERDICTS = new Set(['공소기각','면소','합의취하','고소취하(공소기각)','청구기각','소취하']);
 
 function caseNumber(c) {
+  if (c.case_number) return c.case_number;
   const year = new Date(c.created_at).getFullYear();
   const seq = c.id.slice(0, 4).toUpperCase();
   const type = c.case_type === '형사' ? '형단' : '민단';

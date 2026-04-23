@@ -34,6 +34,7 @@ async function initDb() {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS cases (
       id TEXT PRIMARY KEY,
+      case_number TEXT,
       title TEXT NOT NULL,
       description TEXT NOT NULL,
       plaintiff TEXT NOT NULL,
@@ -74,6 +75,7 @@ async function initDb() {
     DO $$ BEGIN
       ALTER TABLE cases ADD COLUMN IF NOT EXISTS case_type TEXT DEFAULT '형사';
       ALTER TABLE cases ADD COLUMN IF NOT EXISTS punishment TEXT;
+      ALTER TABLE cases ADD COLUMN IF NOT EXISTS case_number TEXT;
     EXCEPTION WHEN others THEN NULL;
     END $$;
   `);
@@ -92,20 +94,20 @@ app.get('/api/cases', async (req, res) => {
 });
 
 app.post('/api/cases', async (req, res) => {
-  const { title, description, plaintiff, defendant, case_type = '형사' } = req.body;
+  const { title, description, plaintiff, defendant, case_type = '형사', case_number = null } = req.body;
   if (!title || !description || !plaintiff || !defendant)
     return res.status(400).json({ error: '모든 항목을 입력해주세요.' });
   const id = uuidv4();
   if (USE_PG) {
     const { rows } = await pool.query(
-      'INSERT INTO cases (id,title,description,plaintiff,defendant,case_type) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *',
-      [id, title, description, plaintiff, defendant, case_type]
+      'INSERT INTO cases (id,case_number,title,description,plaintiff,defendant,case_type) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *',
+      [id, case_number || null, title, description, plaintiff, defendant, case_type]
     );
     io.emit('case_created', rows[0]);
     return res.json(rows[0]);
   }
   const db = readDb();
-  const c = { id, title, description, plaintiff, defendant, case_type, status: 'in_progress', verdict: null, punishment: null, verdict_reason: null, created_at: new Date().toISOString() };
+  const c = { id, case_number: case_number || null, title, description, plaintiff, defendant, case_type, status: 'in_progress', verdict: null, punishment: null, verdict_reason: null, created_at: new Date().toISOString() };
   db.cases.push(c);
   writeDb(db);
   io.emit('case_created', c);

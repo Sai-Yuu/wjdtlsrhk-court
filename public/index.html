@@ -70,6 +70,11 @@
       </div>
 
       <div class="form-group">
+        <label>사건번호 <span style="color:#aaa;font-weight:400;">(선택 — 미입력 시 자동 생성)</span></label>
+        <input type="text" id="caseNumber" placeholder="예: 2025 디코형단 제001호">
+      </div>
+
+      <div class="form-group">
         <label>사건명 <span class="required">*</span></label>
         <input type="text" id="caseTitle" placeholder="예: 롤 팀킬 사건, 스포일러 테러 사건">
       </div>
@@ -109,6 +114,7 @@ let selectedCaseType = '형사';
 
 // 사건번호 생성
 function caseNumber(c) {
+  if (c.case_number) return c.case_number;
   const year = new Date(c.created_at).getFullYear();
   const seq = c.id.slice(0, 4).toUpperCase();
   const type = c.case_type === '형사' ? '형단' : '민단';
@@ -217,7 +223,7 @@ function openNewCaseModal() {
 }
 function closeNewCaseModal() {
   document.getElementById('newCaseModal').classList.remove('active');
-  ['caseTitle','casePlaintiff','caseDefendant','caseDescription'].forEach(id => {
+  ['caseNumber','caseTitle','casePlaintiff','caseDefendant','caseDescription'].forEach(id => {
     document.getElementById(id).value = '';
   });
 }
@@ -233,7 +239,7 @@ async function submitNewCase() {
   const res = await fetch('/api/cases', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ title, plaintiff, defendant, description, case_type: selectedCaseType })
+    body: JSON.stringify({ title, plaintiff, defendant, description, case_type: selectedCaseType, case_number: document.getElementById('caseNumber').value.trim() || null })
   });
   const data = await res.json();
   if (data.error) { toast(data.error, 'error'); return; }
