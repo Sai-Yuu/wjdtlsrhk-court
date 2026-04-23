@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>디스코드 모의법원</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="court-header">
+  <div class="court-emblem">⚖️</div>
+  <div class="court-title">디스코드 모의법원</div>
+  <div class="court-subtitle">DISCORD MOCK COURT OF JUSTICE</div>
+  <div class="header-divider">
+    <span></span>
+    <i>✦</i>
+    <span></span>
+  </div>
+</header>
+
+<nav class="court-nav">
+  <a href="index.html" class="active">🏛️ 사건 목록</a>
+</nav>
+
+<div class="container">
+
+  <div class="section-title" style="justify-content:space-between;align-items:center;display:flex;flex-wrap:wrap;gap:12px;">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <span class="title-icon">📋</span>
+      <h2>접수된 사건 목록</h2>
+      <div class="line" style="width:80px;"></div>
+    </div>
+    <button class="btn btn-primary" onclick="openNewCaseModal()">
+      ＋ 새 사건 접수
+    </button>
+  </div>
+
+  <div id="casesList" class="cases-grid">
+    <div class="empty-state" style="grid-column:1/-1">
+      <div class="empty-icon">⚖️</div>
+      <p>접수된 사건이 없습니다</p>
+    </div>
+  </div>
+
+</div>
+
+<!-- 새 사건 접수 모달 -->
+<div id="newCaseModal" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>📜 새 사건 접수</h3>
+      <button class="modal-close" onclick="closeNewCaseModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>사건명 <span class="required">*</span></label>
+        <input type="text" id="caseTitle" placeholder="예: 롤 팀킬 사건, 채팅방 스포일러 테러 사건">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>원고 (고소인) <span class="required">*</span></label>
+          <input type="text" id="casePlaintiff" placeholder="닉네임 입력">
+        </div>
+        <div class="form-group">
+          <label>피고 (피소인) <span class="required">*</span></label>
+          <input type="text" id="caseDefendant" placeholder="닉네임 입력">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>사건 개요 <span class="required">*</span></label>
+        <textarea id="caseDescription" placeholder="무슨 일이 있었는지 자세히 작성해주세요..."></textarea>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-outline" onclick="closeNewCaseModal()">취소</button>
+        <button class="btn btn-primary" onclick="submitNewCase()">📜 사건 접수</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+const socket = io();
+
+async function loadCases() {
+  const res = await fetch('/api/cases');
+  const cases = await res.json();
+  renderCases(cases);
+}
+
+function renderCases(cases) {
+  const el = document.getElementById('casesList');
+  if (!cases.length) {
+    el.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
+      <div class="empty-icon">⚖️</div>
+      <p>접수된 사건이 없습니다<br><small style="color:#bbb;font-size:12px;margin-top:8px;display:block">새 사건 접수 버튼으로 시작하세요</small></p>
+    </div>`;
+    return;
+  }
+  el.innerHTML = cases.map(c => {
+    const statusLabel = c.status === 'in_progress' ? '⚖️ 재판 진행 중' : '🔨 종결';
+    const badgeClass = c.status === 'closed'
+      ? (c.verdict === '유죄' ? 'badge-closed-guilty' : c.verdict === '무죄' ? 'badge-closed-notguilty' : 'badge-closed')
+      : 'badge-in_progress';
+    const date = new Date(c.created_at).toLocaleDateString('ko-KR');
+    const caseNum = `사건 ${c.id.slice(0,8).toUpperCase()}`;
+    return `
+      <a class="case-card" href="trial.html?id=${c.id}">
+        <div class="case-card-header">
+          <span class="case-number">${caseNum}</span>
+          <span class="badge ${badgeClass}">${c.verdict ? c.verdict : statusLabel}</span>
+        </div>
+        <div class="case-title">${escHtml(c.title)}</div>
+        <div class="case-parties">
+          <span>${escHtml(c.plaintiff)}</span>
+          <span class="vs">VS</span>
+          <span>${escHtml(c.defendant)}</span>
+        </div>
+        <div class="case-desc">${escHtml(c.description)}</div>
+        <div class="case-meta">
+          <span>📅 ${date}</span>
+          ${c.verdict ? `<span>🔨 판결: ${escHtml(c.verdict)}</span>` : ''}
+        </div>
+      </a>`;
+  }).join('');
+}
+
+function openNewCaseModal() {
+  document.getElementById('newCaseModal').classList.add('active');
+  document.getElementById('caseTitle').focus();
+}
+function closeNewCaseModal() {
+  document.getElementById('newCaseModal').classList.remove('active');
+  ['caseTitle','casePlaintiff','caseDefendant','caseDescription'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+}
+
+async function submitNewCase() {
+  const title = document.getElementById('caseTitle').value.trim();
+  const plaintiff = document.getElementById('casePlaintiff').value.trim();
+  const defendant = document.getElementById('caseDefendant').value.trim();
+  const description = document.getElementById('caseDescription').value.trim();
+  if (!title || !plaintiff || !defendant || !description) {
+    toast('모든 항목을 입력해주세요.', 'error'); return;
+  }
+  const res = await fetch('/api/cases', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ title, plaintiff, defendant, description })
+  });
+  const data = await res.json();
+  if (data.error) { toast(data.error, 'error'); return; }
+  toast('사건이 접수되었습니다!', 'success');
+  closeNewCaseModal();
+  loadCases();
+}
+
+socket.on('case_created', () => loadCases());
+
+// 오버레이 클릭으로 닫기
+document.getElementById('newCaseModal').addEventListener('click', function(e) {
+  if (e.target === this) closeNewCaseModal();
+});
+
+function escHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function toast(msg, type = '') {
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.textContent = msg;
+  document.getElementById('toastContainer').appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+
+loadCases();
+</script>
+</body>
+</html>
