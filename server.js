@@ -5,10 +5,27 @@ const { Server } = require('socket.io');
 const { v4: uuidv4 } = require('uuid');
 const path = require('path');
 const fs = require('fs');
+const multer = require('multer');
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
+
+// ── 파일 업로드 설정 ───────────────────────────────────────────
+const UPLOADS_DIR = path.join(__dirname, 'uploads');
+if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR);
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, UPLOADS_DIR),
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname);
+    cb(null, `${uuidv4()}${ext}`);
+  },
+});
+const upload = multer({
+  storage,
+  limits: { fileSize: 50 * 1024 * 1024 },
+});
 
 const USE_PG = !!process.env.DATABASE_URL;
 let pool;
@@ -52,6 +69,7 @@ async function initDb() {
       author TEXT NOT NULL,
       role TEXT NOT NULL,
       content TEXT NOT NULL,
+      file_url TEXT,
       created_at TIMESTAMPTZ DEFAULT NOW()
     );
     CREATE TABLE IF NOT EXISTS evidence (
@@ -60,6 +78,7 @@ async function initDb() {
       submitted_by TEXT NOT NULL,
       title TEXT NOT NULL,
       content TEXT NOT NULL,
+      file_url TEXT,
       created_at TIMESTAMPTZ DEFAULT NOW()
     );
     CREATE TABLE IF NOT EXISTS votes (
@@ -76,6 +95,8 @@ async function initDb() {
       ALTER TABLE cases ADD COLUMN IF NOT EXISTS case_type TEXT DEFAULT '형사';
       ALTER TABLE cases ADD COLUMN IF NOT EXISTS punishment TEXT;
       ALTER TABLE cases ADD COLUMN IF NOT EXISTS case_number TEXT;
+      ALTER TABLE statements ADD COLUMN IF NOT EXISTS file_url TEXT;
+      ALTER TABLE evidence ADD COLUMN IF NOT EXISTS file_url TEXT;
     EXCEPTION WHEN others THEN NULL;
     END $$;
   `);
@@ -83,6 +104,17 @@ async function initDb() {
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
+app.use('/uploads', express.static(UPLOADS_DIR));
+
+// ── 파일 업로드 ────────────────────────────────────────────────
+app.post('/api/upload', upload.single('file'), (req, res) => {
+  if (!req.file) return res.status(400).json({ error: '파일이 없습니다.' });
+  res.json({
+    url: `/uploads/${req.file.filename}`,
+    originalname: req.file.originalname,
+    mimetype: req.file.mimetype,
+  });
+});
 
 // ── 사건 ──────────────────────────────────────────────────────
 app.get('/api/cases', async (req, res) => {
@@ -136,15 +168,15 @@ app.get('/api/cases/:id', async (req, res) => {
 
 // ── 발언 ──────────────────────────────────────────────────────
 app.post('/api/cases/:id/statements', async (req, res) => {
-  const { author, role, content } = req.body;
+  const { author, role, content, file_url = null } = req.body;
   if (!author || !role || !content) return res.status(400).json({ error: '입력값을 확인해주세요.' });
   if (USE_PG) {
     const { rows: c } = await pool.query('SELECT status FROM cases WHERE id=$1', [req.params.id]);
     if (!c.length) return res.status(404).json({ error: '사건 없음' });
     if (c[0].status === 'closed') return res.status(400).json({ error: '이미 종결된 사건입니다.' });
     const { rows } = await pool.query(
-      'INSERT INTO statements (id,case_id,author,role,content) VALUES ($1,$2,$3,$4,$5) RETURNING *',
-      [uuidv4(), req.params.id, author, role, content]
+      'INSERT INTO statements (id,case_id,author,role,content,file_url) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *',
+      [uuidv4(), req.params.id, author, role, content, file_url]
     );
     io.to(req.params.id).emit('new_statement', rows[0]);
     return res.json(rows[0]);
@@ -153,7 +185,7 @@ app.post('/api/cases/:id/statements', async (req, res) => {
   const c = db.cases.find(x => x.id === req.params.id);
   if (!c) return res.status(404).json({ error: '사건 없음' });
   if (c.status === 'closed') return res.status(400).json({ error: '이미 종결된 사건입니다.' });
-  const stmt = { id: uuidv4(), case_id: req.params.id, author, role, content, created_at: new Date().toISOString() };
+  const stmt = { id: uuidv4(), case_id: req.params.id, author, role, content, file_url, created_at: new Date().toISOString() };
   db.statements.push(stmt);
   writeDb(db);
   io.to(req.params.id).emit('new_statement', stmt);
@@ -162,15 +194,15 @@ app.post('/api/cases/:id/statements', async (req, res) => {
 
 // ── 증거 ──────────────────────────────────────────────────────
 app.post('/api/cases/:id/evidence', async (req, res) => {
-  const { submitted_by, title, content } = req.body;
-  if (!submitted_by || !title || !content) return res.status(400).json({ error: '입력값을 확인해주세요.' });
+  const { submitted_by, title, content = '', file_url = null } = req.body;
+  if (!submitted_by || !title || (!content && !file_url)) return res.status(400).json({ error: '입력값을 확인해주세요.' });
   if (USE_PG) {
     const { rows: c } = await pool.query('SELECT status FROM cases WHERE id=$1', [req.params.id]);
     if (!c.length) return res.status(404).json({ error: '사건 없음' });
     if (c[0].status === 'closed') return res.status(400).json({ error: '이미 종결된 사건입니다.' });
     const { rows } = await pool.query(
-      'INSERT INTO evidence (id,case_id,submitted_by,title,content) VALUES ($1,$2,$3,$4,$5) RETURNING *',
-      [uuidv4(), req.params.id, submitted_by, title, content]
+      'INSERT INTO evidence (id,case_id,submitted_by,title,content,file_url) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *',
+      [uuidv4(), req.params.id, submitted_by, title, content, file_url]
     );
     io.to(req.params.id).emit('new_evidence', rows[0]);
     return res.json(rows[0]);
@@ -179,7 +211,7 @@ app.post('/api/cases/:id/evidence', async (req, res) => {
   const c = db.cases.find(x => x.id === req.params.id);
   if (!c) return res.status(404).json({ error: '사건 없음' });
   if (c.status === 'closed') return res.status(400).json({ error: '이미 종결된 사건입니다.' });
-  const ev = { id: uuidv4(), case_id: req.params.id, submitted_by, title, content, created_at: new Date().toISOString() };
+  const ev = { id: uuidv4(), case_id: req.params.id, submitted_by, title, content, file_url, created_at: new Date().toISOString() };
   db.evidence.push(ev);
   writeDb(db);
   io.to(req.params.id).emit('new_evidence', ev);
