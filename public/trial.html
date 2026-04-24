@@ -383,13 +383,17 @@ function showVerdictBanner(c) {
 }
 
 // ── 파일 렌더링 헬퍼 ─────────────────────────────────────────
-function fileHtml(url) {
-  if (!url) return '';
-  if (/\.(jpg|jpeg|png|gif|webp|svg)$/i.test(url)) {
-    return `<a href="${url}" target="_blank"><img src="${url}" style="max-width:100%;max-height:200px;margin-top:6px;border-radius:4px;display:block;cursor:zoom-in;"></a>`;
+function fileHtml(url, backupUrl) {
+  if (!url && !backupUrl) return '';
+  const primary = url || backupUrl;
+  const fallback = url && backupUrl ? backupUrl : null;
+  if (/\.(jpg|jpeg|png|gif|webp|svg)$/i.test(primary) || (fallback && /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(fallback))) {
+    const onerror = fallback ? `this.onerror=null;this.src='${fallback}';` : '';
+    return `<a href="${primary}" target="_blank"><img src="${primary}" ${onerror ? `onerror="${onerror}"` : ''} style="max-width:100%;max-height:200px;margin-top:6px;border-radius:4px;display:block;cursor:zoom-in;"></a>`;
   }
-  const name = decodeURIComponent(url.split('/').pop());
-  return `<a href="${url}" target="_blank" download style="display:inline-block;margin-top:6px;font-size:12px;color:var(--gold-dark);text-decoration:underline;">📎 ${escHtml(name)}</a>`;
+  const name = decodeURIComponent(primary.split('/').pop());
+  const fallbackLink = fallback ? ` <a href="${fallback}" target="_blank" style="font-size:11px;color:#aaa;">(백업)</a>` : '';
+  return `<a href="${primary}" target="_blank" download style="display:inline-block;margin-top:6px;font-size:12px;color:var(--gold-dark);text-decoration:underline;">📎 ${escHtml(name)}</a>${fallbackLink}`;
 }
 
 // ── 발언 렌더링 ──────────────────────────────────────────────
@@ -411,7 +415,7 @@ function renderStatements(stmts) {
         <span class="statement-time">${time}</span>
       </div>
       <div class="statement-content">${escHtml(s.content)}</div>
-      ${fileHtml(s.file_url)}
+      ${fileHtml(s.file_url, s.file_backup_url)}
     </div>`;
   }).join('');
   el.scrollTop = el.scrollHeight;
@@ -429,7 +433,7 @@ function renderEvidence(evs) {
       <div class="evidence-title">증거 ${i + 1}. ${escHtml(e.title)}</div>
       <div class="evidence-submitter">제출: ${escHtml(e.submitted_by)}</div>
       ${e.content ? `<div class="evidence-content">${escHtml(e.content)}</div>` : ''}
-      ${fileHtml(e.file_url)}
+      ${fileHtml(e.file_url, e.file_backup_url)}
     </div>`).join('');
 }
 
@@ -459,13 +463,13 @@ function renderVotes(votes) {
 
 // ── 파일 업로드 헬퍼 ─────────────────────────────────────────
 async function uploadFile(fileInput) {
-  if (!fileInput.files[0]) return null;
+  if (!fileInput.files[0]) return { url: null, backup_url: null };
   const formData = new FormData();
   formData.append('file', fileInput.files[0]);
   const res = await fetch('/api/upload', { method: 'POST', body: formData });
   const data = await res.json();
   if (data.error) throw new Error(data.error);
-  return data.url;
+  return { url: data.url, backup_url: data.backup_url };
 }
 
 // ── API 호출 ─────────────────────────────────────────────────
@@ -474,12 +478,13 @@ async function submitStatement() {
   const role = document.getElementById('stmtRole').value;
   const content = document.getElementById('stmtContent').value.trim();
   if (!author || !content) { toast('닉네임과 발언 내용을 입력해주세요.', 'error'); return; }
-  let file_url = null;
-  try { file_url = await uploadFile(document.getElementById('stmtFile')); }
-  catch (e) { toast('파일 업로드 실패: ' + e.message, 'error'); return; }
+  let file_url = null, file_backup_url = null;
+  try {
+    ({ url: file_url, backup_url: file_backup_url } = await uploadFile(document.getElementById('stmtFile')));
+  } catch (e) { toast('파일 업로드 실패: ' + e.message, 'error'); return; }
   const res = await fetch(`/api/cases/${CASE_ID}/statements`, {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ author, role, content, file_url })
+    body: JSON.stringify({ author, role, content, file_url, file_backup_url })
   });
   const data = await res.json();
   if (data.error) { toast(data.error, 'error'); return; }
@@ -495,12 +500,13 @@ async function submitEvidence() {
   const fileInput = document.getElementById('evidenceFile');
   if (!submitted_by || !title) { toast('제출자와 증거 제목을 입력해주세요.', 'error'); return; }
   if (!content && !fileInput.files[0]) { toast('내용 또는 파일을 첨부해주세요.', 'error'); return; }
-  let file_url = null;
-  try { file_url = await uploadFile(fileInput); }
-  catch (e) { toast('파일 업로드 실패: ' + e.message, 'error'); return; }
+  let file_url = null, file_backup_url = null;
+  try {
+    ({ url: file_url, backup_url: file_backup_url } = await uploadFile(fileInput));
+  } catch (e) { toast('파일 업로드 실패: ' + e.message, 'error'); return; }
   const res = await fetch(`/api/cases/${CASE_ID}/evidence`, {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ submitted_by, title, content, file_url })
+    body: JSON.stringify({ submitted_by, title, content, file_url, file_backup_url })
   });
   const data = await res.json();
   if (data.error) { toast(data.error, 'error'); return; }
