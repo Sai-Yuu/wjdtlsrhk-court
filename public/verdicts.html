@@ -434,7 +434,7 @@ function render(list) {
   el.innerHTML = list.map(v => {
     const cls = v.case_type === '형사' ? 'criminal' : 'civil';
     const vClass = VERDICT_CLASS[v.verdict] || 'dismissed';
-    const stampTxt = (STAMP_TEXT[v.verdict] || v.verdict).replace(/\n/g,'<br>');
+    const stampTxt = esc(STAMP_TEXT[v.verdict] || v.verdict).replace(/\n/g,'<br>');
     const num = caseNumber(v);
     const date = new Date(v.created_at).toLocaleDateString('ko-KR');
     const total = v.vote_total || 0;
@@ -494,7 +494,7 @@ async function openDetail(id) {
 function renderDetail(c) {
   const cls = c.case_type === '형사' ? 'criminal' : 'civil';
   const vClass = VERDICT_CLASS[c.verdict] || 'dismissed';
-  const stampTxt = (STAMP_TEXT[c.verdict] || c.verdict).replace(/\n/g,'<br>');
+  const stampTxt = esc(STAMP_TEXT[c.verdict] || c.verdict).replace(/\n/g,'<br>');
   const num = caseNumber(c);
   const isCivil = c.case_type === '민사';
   const plaintiffLabel = isCivil ? '원고' : '고소인/검사';

@@ -200,8 +200,13 @@ app.get('/api/cases/:id', async (req, res) => {
 });
 
 // ── 발언 ──────────────────────────────────────────────────────
+const UPLOAD_URL_RE = /^\/uploads\/[^/]+$/;
+function sanitizeFileUrl(u) { return (u && UPLOAD_URL_RE.test(u)) ? u : null; }
+
 app.post('/api/cases/:id/statements', async (req, res) => {
-  const { author, role, content, file_url = null, file_backup_url = null } = req.body;
+  const { author, role, content } = req.body;
+  const file_url = sanitizeFileUrl(req.body.file_url);
+  const file_backup_url = sanitizeFileUrl(req.body.file_backup_url);
   if (!author || !role || !content) return res.status(400).json({ error: '입력값을 확인해주세요.' });
   if (USE_PG) {
     const { rows: c } = await pool.query('SELECT status FROM cases WHERE id=$1', [req.params.id]);
@@ -227,7 +232,9 @@ app.post('/api/cases/:id/statements', async (req, res) => {
 
 // ── 증거 ──────────────────────────────────────────────────────
 app.post('/api/cases/:id/evidence', async (req, res) => {
-  const { submitted_by, title, content = '', file_url = null, file_backup_url = null } = req.body;
+  const { submitted_by, title, content = '' } = req.body;
+  const file_url = sanitizeFileUrl(req.body.file_url);
+  const file_backup_url = sanitizeFileUrl(req.body.file_backup_url);
   if (!submitted_by || !title || (!content && !file_url)) return res.status(400).json({ error: '입력값을 확인해주세요.' });
   if (USE_PG) {
     const { rows: c } = await pool.query('SELECT status FROM cases WHERE id=$1', [req.params.id]);

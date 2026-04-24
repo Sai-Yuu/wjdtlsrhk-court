@@ -387,13 +387,15 @@ function fileHtml(url, backupUrl) {
   if (!url && !backupUrl) return '';
   const primary = url || backupUrl;
   const fallback = url && backupUrl ? backupUrl : null;
+  const ePrimary = escHtml(primary);
+  const eFallback = fallback ? escHtml(fallback) : null;
   if (/\.(jpg|jpeg|png|gif|webp|svg)$/i.test(primary) || (fallback && /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(fallback))) {
-    const onerror = fallback ? `this.onerror=null;this.src='${fallback}';` : '';
-    return `<a href="${primary}" target="_blank"><img src="${primary}" ${onerror ? `onerror="${onerror}"` : ''} style="max-width:100%;max-height:200px;margin-top:6px;border-radius:4px;display:block;cursor:zoom-in;"></a>`;
+    const onerror = eFallback ? `this.onerror=null;this.src='${eFallback}';` : '';
+    return `<a href="${ePrimary}" target="_blank"><img src="${ePrimary}" ${onerror ? `onerror="${onerror}"` : ''} style="max-width:100%;max-height:200px;margin-top:6px;border-radius:4px;display:block;cursor:zoom-in;"></a>`;
   }
   const name = decodeURIComponent(primary.split('/').pop());
-  const fallbackLink = fallback ? ` <a href="${fallback}" target="_blank" style="font-size:11px;color:#aaa;">(백업)</a>` : '';
-  return `<a href="${primary}" target="_blank" download style="display:inline-block;margin-top:6px;font-size:12px;color:var(--gold-dark);text-decoration:underline;">📎 ${escHtml(name)}</a>${fallbackLink}`;
+  const fallbackLink = eFallback ? ` <a href="${eFallback}" target="_blank" style="font-size:11px;color:#aaa;">(백업)</a>` : '';
+  return `<a href="${ePrimary}" target="_blank" download style="display:inline-block;margin-top:6px;font-size:12px;color:var(--gold-dark);text-decoration:underline;">📎 ${escHtml(name)}</a>${fallbackLink}`;
 }
 
 // ── 발언 렌더링 ──────────────────────────────────────────────
