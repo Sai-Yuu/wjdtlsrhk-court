@@ -6,10 +6,36 @@ const { v4: uuidv4 } = require('uuid');
 const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
+const cloudinary = require('cloudinary').v2;
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
+
+// ── Cloudinary 설정 (환경변수 없으면 백업 비활성) ────────────────
+const CLOUDINARY_ENABLED = !!(
+  process.env.CLOUDINARY_CLOUD_NAME &&
+  process.env.CLOUDINARY_API_KEY &&
+  process.env.CLOUDINARY_API_SECRET
+);
+if (CLOUDINARY_ENABLED) {
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+  });
+}
+
+async function uploadToCloudinary(localPath) {
+  if (!CLOUDINARY_ENABLED) return null;
+  try {
+    const result = await cloudinary.uploader.upload(localPath, { resource_type: 'auto' });
+    return result.secure_url;
+  } catch (e) {
+    console.error('Cloudinary 백업 실패:', e.message);
+    return null;
+  }
+}
 
 // ── 파일 업로드 설정 ───────────────────────────────────────────
 const UPLOADS_DIR = path.join(__dirname, 'uploads');
@@ -70,6 +96,7 @@ async function initDb() {
       role TEXT NOT NULL,
       content TEXT NOT NULL,
       file_url TEXT,
+      file_backup_url TEXT,
       created_at TIMESTAMPTZ DEFAULT NOW()
     );
     CREATE TABLE IF NOT EXISTS evidence (
@@ -79,6 +106,7 @@ async function initDb() {
       title TEXT NOT NULL,
       content TEXT NOT NULL,
       file_url TEXT,
+      file_backup_url TEXT,
       created_at TIMESTAMPTZ DEFAULT NOW()
     );
     CREATE TABLE IF NOT EXISTS votes (
@@ -96,7 +124,9 @@ async function initDb() {
       ALTER TABLE cases ADD COLUMN IF NOT EXISTS punishment TEXT;
       ALTER TABLE cases ADD COLUMN IF NOT EXISTS case_number TEXT;
       ALTER TABLE statements ADD COLUMN IF NOT EXISTS file_url TEXT;
+      ALTER TABLE statements ADD COLUMN IF NOT EXISTS file_backup_url TEXT;
       ALTER TABLE evidence ADD COLUMN IF NOT EXISTS file_url TEXT;
+      ALTER TABLE evidence ADD COLUMN IF NOT EXISTS file_backup_url TEXT;
     EXCEPTION WHEN others THEN NULL;
     END $$;
   `);
@@ -107,10 +137,13 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/uploads', express.static(UPLOADS_DIR));
 
 // ── 파일 업로드 ────────────────────────────────────────────────
-app.post('/api/upload', upload.single('file'), (req, res) => {
+app.post('/api/upload', upload.single('file'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: '파일이 없습니다.' });
+  const localUrl = `/uploads/${req.file.filename}`;
+  const backupUrl = await uploadToCloudinary(req.file.path);
   res.json({
-    url: `/uploads/${req.file.filename}`,
+    url: localUrl,
+    backup_url: backupUrl,
     originalname: req.file.originalname,
     mimetype: req.file.mimetype,
   });
@@ -168,15 +201,15 @@ app.get('/api/cases/:id', async (req, res) => {
 
 // ── 발언 ──────────────────────────────────────────────────────
 app.post('/api/cases/:id/statements', async (req, res) => {
-  const { author, role, content, file_url = null } = req.body;
+  const { author, role, content, file_url = null, file_backup_url = null } = req.body;
   if (!author || !role || !content) return res.status(400).json({ error: '입력값을 확인해주세요.' });
   if (USE_PG) {
     const { rows: c } = await pool.query('SELECT status FROM cases WHERE id=$1', [req.params.id]);
     if (!c.length) return res.status(404).json({ error: '사건 없음' });
     if (c[0].status === 'closed') return res.status(400).json({ error: '이미 종결된 사건입니다.' });
     const { rows } = await pool.query(
-      'INSERT INTO statements (id,case_id,author,role,content,file_url) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *',
-      [uuidv4(), req.params.id, author, role, content, file_url]
+      'INSERT INTO statements (id,case_id,author,role,content,file_url,file_backup_url) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *',
+      [uuidv4(), req.params.id, author, role, content, file_url, file_backup_url]
     );
     io.to(req.params.id).emit('new_statement', rows[0]);
     return res.json(rows[0]);
@@ -185,7 +218,7 @@ app.post('/api/cases/:id/statements', async (req, res) => {
   const c = db.cases.find(x => x.id === req.params.id);
   if (!c) return res.status(404).json({ error: '사건 없음' });
   if (c.status === 'closed') return res.status(400).json({ error: '이미 종결된 사건입니다.' });
-  const stmt = { id: uuidv4(), case_id: req.params.id, author, role, content, file_url, created_at: new Date().toISOString() };
+  const stmt = { id: uuidv4(), case_id: req.params.id, author, role, content, file_url, file_backup_url, created_at: new Date().toISOString() };
   db.statements.push(stmt);
   writeDb(db);
   io.to(req.params.id).emit('new_statement', stmt);
@@ -194,15 +227,15 @@ app.post('/api/cases/:id/statements', async (req, res) => {
 
 // ── 증거 ──────────────────────────────────────────────────────
 app.post('/api/cases/:id/evidence', async (req, res) => {
-  const { submitted_by, title, content = '', file_url = null } = req.body;
+  const { submitted_by, title, content = '', file_url = null, file_backup_url = null } = req.body;
   if (!submitted_by || !title || (!content && !file_url)) return res.status(400).json({ error: '입력값을 확인해주세요.' });
   if (USE_PG) {
     const { rows: c } = await pool.query('SELECT status FROM cases WHERE id=$1', [req.params.id]);
     if (!c.length) return res.status(404).json({ error: '사건 없음' });
     if (c[0].status === 'closed') return res.status(400).json({ error: '이미 종결된 사건입니다.' });
     const { rows } = await pool.query(
-      'INSERT INTO evidence (id,case_id,submitted_by,title,content,file_url) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *',
-      [uuidv4(), req.params.id, submitted_by, title, content, file_url]
+      'INSERT INTO evidence (id,case_id,submitted_by,title,content,file_url,file_backup_url) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *',
+      [uuidv4(), req.params.id, submitted_by, title, content, file_url, file_backup_url]
     );
     io.to(req.params.id).emit('new_evidence', rows[0]);
     return res.json(rows[0]);
@@ -211,7 +244,7 @@ app.post('/api/cases/:id/evidence', async (req, res) => {
   const c = db.cases.find(x => x.id === req.params.id);
   if (!c) return res.status(404).json({ error: '사건 없음' });
   if (c.status === 'closed') return res.status(400).json({ error: '이미 종결된 사건입니다.' });
-  const ev = { id: uuidv4(), case_id: req.params.id, submitted_by, title, content, file_url, created_at: new Date().toISOString() };
+  const ev = { id: uuidv4(), case_id: req.params.id, submitted_by, title, content, file_url, file_backup_url, created_at: new Date().toISOString() };
   db.evidence.push(ev);
   writeDb(db);
   io.to(req.params.id).emit('new_evidence', ev);
